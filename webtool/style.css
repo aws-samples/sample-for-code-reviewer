@@ -1,0 +1,1511 @@
+/* Visual Studio Light Theme */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #ffffff;
+    color: #1e1e1e;
+    margin: 0;
+    padding: 0;
+    min-width: 1200px;
+}
+
+#page-header {
+    background-color: #f5f5f5;
+    color: #1e1e1e;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    min-width: 1200px;
+}
+
+#page-header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+#main-container {
+    display: flex;
+    flex: 1;
+    min-width: 1200px;
+}
+
+#left-panel, #right-panel {
+    height: calc(100vh - 50px);
+    overflow-y: auto;
+    box-sizing: border-box;
+    min-width: 600px;
+}
+
+#left-panel {
+    width: 50%;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border-right: 1px solid #e0e0e0;
+}
+
+#right-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    background-color: #ffffff;
+}
+
+#left-panel textarea {
+    width: calc(100% - 10px);
+    margin: 0;
+    resize: vertical;
+    min-height: 6em;
+    height: 6em;
+    line-height: 1.4em;
+    padding: 5px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    background-color: #ffffff;
+    color: #1e1e1e;
+}
+
+.report-header {
+    height: 50px;
+    background-color: #f5f5f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 18px;
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    margin: 0;
+    padding: 0;
+}
+
+#report-area {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 10px 15px;
+}
+
+#report-content, #report-frame {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+#report-frame {
+    border: none;
+    width: 100%;
+    display: none;
+}
+
+.section-wrapper {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.section-wrapper.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.section-checkbox {
+    margin-right: 10px;
+    margin-top: 11px;
+}
+
+.section-checkbox:checked + .section {
+    border-left: 4px solid #007acc;
+}
+
+.section {
+    flex-grow: 1;
+    padding: 15px;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.section:hover {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.section h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    cursor: move;
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+textarea {
+    width: calc(100% - 10px);
+    margin: 0;
+    resize: vertical;
+}
+
+input[type="text"], textarea, select {
+    width: calc(100% - 10px);
+    padding: 8px;
+    margin: 0;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    transition: border-color 0.3s ease;
+    background-color: #ffffff;
+    color: #1e1e1e;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 3px rgba(0, 122, 204, 0.3);
+    outline: none;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.input-row label {
+    min-width: 150px;
+    margin-right: 10px;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.input-row input[type="text"],
+.input-row select {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    transition: border-color 0.3s ease;
+}
+
+.input-row .radio-group {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+}
+
+button {
+    margin-top: 10px;
+    padding: 8px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #005a9e;
+}
+
+.hidden {
+    display: none;
+}
+
+.radio-group {
+    display: flex;
+    flex-grow: 1;
+}
+
+.radio-group label {
+    margin-right: 20px;
+    background-color: #f5f5f5;
+    padding: 5px 10px;
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.radio-group label:hover {
+    background-color: #e0e0e0;
+}
+
+.radio-group input[type="radio"]:checked + label {
+    background-color: #007acc;
+    color: white;
+}
+
+.collapsed {
+    max-height: 43px;
+    overflow: hidden;
+}
+
+.collapsed h2 {
+    margin: 0;
+    line-height: 23px;
+}
+
+.collapsed .section-content {
+    display: none;
+}
+
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#add-section {
+    background-color: #28a745;
+}
+
+#add-section:hover {
+    background-color: #218838;
+}
+
+#execute-review {
+    background-color: #dc3545;
+}
+
+#execute-review:hover {
+    background-color: #c82333;
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 2px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    max-width: 90%;
+    display: flex;
+    flex-direction: column;
+    max-height: 80vh;
+}
+
+.default-dialog {
+    width: 800px;
+}
+
+.small-dialog {
+    width: 400px;
+}
+
+.dialog-content {
+    overflow-y: auto;
+    margin-bottom: 20px;
+    flex-grow: 1;
+    position: relative;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dialog-buttons button {
+    margin-left: 10px;
+}
+
+.error-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.error {
+    color: #dc3545;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#sortable-sections .section-wrapper {
+    cursor: move;
+}
+
+#sortable-sections .section-wrapper:hover {
+    background-color: #f9f9f9;
+}
+
+.summary, .tasks {
+    margin-bottom: 20px;
+}
+
+.summary h3, .tasks h3 {
+    margin-bottom: 15px;
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+}
+
+.task {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.task h4 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+}
+
+.field {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.field label {
+    width: 150px;
+    min-width: 150px;
+    margin-right: 10px;
+    padding-top: 3px;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.field input,
+.field textarea,
+.field .plain-text-value {
+    flex-grow: 1;
+    width: calc(100% - 210px);
+    margin-right: 5px;
+    margin-left: 0;
+    padding: 3px 5px;
+}
+
+.plain-text-value {
+    display: inline-block;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    font-size: 14px;
+    line-height: 20px;
+    min-height: 20px;
+    background-color: #f5f5f5;
+}
+
+.copy-button {
+    flex-shrink: 0;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 5px;
+    margin: 0 0 0 5px;
+    height: 20px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+}
+
+.copy-button:hover {
+    background-color: #5a6268;
+}
+
+.field:not(:has(.copy-button))::after {
+    content: '';
+    width: 45px;
+    flex-shrink: 0;
+}
+
+#status-container {
+    margin-bottom: 15px;
+    font-weight: normal;
+    font-size: 14px;
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 10px;
+    border-radius: 2px;
+    border: 1px solid #ffeeba;
+}
+
+#report-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#report-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#report-content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#report-content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#response h2 {
+    cursor: default;
+}
+
+.non-sortable {
+    pointer-events: none;
+}
+
+.non-sortable .section-checkbox {
+    pointer-events: none;
+}
+
+.non-sortable textarea {
+    background-color: #f5f5f5;
+    cursor: default;
+}
+
+#commit-whole, #commit-range {
+    display: none;
+}
+
+.toast-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 2px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(40, 167, 69, 0.3);
+}
+
+.toast-message.show {
+    opacity: 1;
+}
+
+.tab-header {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    padding-left: 10px;
+    background-color: #f5f5f5;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #f5f5f5;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+    color: #1e1e1e;
+    font-weight: 600;
+}
+
+.tab-button.active {
+    background-color: #ffffff;
+    border-bottom: 3px solid #007acc;
+    color: #007acc;
+}
+
+.tab-button:hover {
+    background-color: #e0e0e0;
+}
+
+.tab-content {
+    display: none;
+    padding: 20px;
+    height: calc(100% - 50px);
+    overflow-y: auto}
+
+#report-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+#progress-tab {
+    padding: 20px;
+}
+
+.summary, .task {
+    background-color: #ffffff;
+    border-radius: 2px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.summary h3, .task h4 {
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+#model-select {
+    padding: 8px;
+    border-radius: 2px;
+    border: 1px solid #cccedb;
+    background-color: #ffffff;
+    color: #1e1e1e;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+}
+
+#model-select:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 3px rgba(0, 122, 204, 0.3);
+    outline: none;
+}
+
+#model-select option {
+    padding: 8px;
+}
+
+@media (max-width: 1200px) {
+    body,#page-header, #main-container {
+        min-width: 1200px;
+    }}
+
+#gitlab-config {
+    min-width: 300px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#gitlab-config .input-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#gitlab-config .input-row label {
+    min-width: 140px;
+    margin-right: 10px;
+    flex: 0 0 auto;
+}
+
+#gitlab-config .input-row input[type="text"],
+#gitlab-config .input-row input[type="password"],
+#gitlab-config .input-row select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#gitlab-config h2 {
+    cursor: default;
+}
+
+#system h2 {
+    cursor: default;
+}
+
+#system .section-checkbox {
+    pointer-events: none;
+}
+
+#system textarea {
+    resize: vertical;
+    min-height: 2em;
+    height: auto;
+}
+
+#task-time-info {
+    background-color: #f5f5f5;
+    border-radius: 2px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#task-time-info h3 {
+    color: #1e1e1e;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+#task-time-info p {
+    margin: 5px 0;
+}
+
+.toolbar {
+    padding: 10px 20px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 2px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.toolbar-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-left: 15px;
+    margin-top: 0;
+}
+
+.icon-btn img {
+    width: 16px;
+    height: 16px;
+}
+
+.template-select {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.template-select label {
+    margin-right: 10px;
+    white-space: nowrap;
+    font-size: 14px;
+    color: #1e1e1e;
+}
+
+#template-dropdown {
+    padding: 5px 10px;
+    border-radius: 2px;
+    border: 1px solid #cccedb;
+    font-size: 14px;
+    height: 30px;
+    width: 150px;
+}
+
+.section-wrapper .section-checkbox:checked + .toolbar {
+    border-left: 4px solid #007acc;
+}
+
+.help-icon {
+    margin-left: 10px;
+    flex: 0 0 auto;
+}
+
+.input-row .radio-group + .help-icon {
+    margin-left: auto;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: #1e1e1e;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 2px;
+    font-size: 12px;
+    z-index: 1000;
+    max-width: 500px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.help-dialog {
+    width: 90%;
+    max-width: 600px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    background-color: white;
+    border-radius: 2px;
+}
+
+.help-dialog h3 {
+    text-align: left;
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #1e1e1e;
+}
+
+.help-content {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 20px;
+}
+
+.help-text h4 {
+    margin-bottom: 15px;
+    color: #007acc;
+    font-size: 18px;
+}
+
+.help-text p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.help-text strong {
+    color: #007acc;
+}
+
+.help-page {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.help-page video {
+    max-width: 100%;
+    max-height: calc(100vh - 200px);
+    margin-top: 20px;
+    object-fit: contain;
+}
+
+.dialog-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#prev-page,
+#next-page,
+#close-help-dialog {
+    padding: 8px 15px;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#prev-page:hover,
+#next-page:hover,
+#close-help-dialog:hover {
+    background-color: #005a9e;
+}
+
+#prev-page:disabled,
+#next-page:disabled {
+    background-color: #cccedb;
+    cursor: not-allowed;
+}
+
+#page-indicator {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0 15px;
+}
+
+#page3 {
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.show-on-startup {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.show-on-startup input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.password-input-container {
+    position: relative;
+    display: flex;
+    flex-grow: 1;
+    align-items: center;
+}
+
+.password-input-container input {
+    width: 100%;
+    padding: 8px;
+    padding-right: 35px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    transition: border-color 0.3s ease;
+}
+
+.password-input-container input:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 3px rgba(0, 122, 204, 0.3);
+    outline: none;
+}
+
+.password-input-container input:disabled,
+.password-input-container button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 100px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0px;
+}
+
+.toggle-password:focus {
+    outline: none;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+#gitlab-config .checkbox-container label , .checkbox-container label {
+    width: 50px;
+    min-width: 50px;
+    margin-left: 5px;
+}
+
+.radio-group {
+    display: flex;
+    flex: 0 0 auto;
+}
+
+.radio-group label {
+    margin-right: 10px;
+    white-space: nowrap;
+}
+
+#gitlab-config .input-row .radio-group label {
+    width: 80px;
+    min-width: 80px;
+}
+
+#rules-config .input-row .radio-group label {
+    width: 80px;
+    min-width: 80px;
+}
+
+.gitlab-config-top {
+    margin-bottom: 20px;
+}
+
+.gitlab-config-divider {
+    border-top: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+}
+
+.rule-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.rule-dialog {
+    background-color: white;
+    padding: 20px;
+    border-radius: 2px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+.rule-dialog h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.rule-dialog .input-row {
+    margin-bottom: 20px;
+}
+
+.rule-dialog .input-row label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.rule-dialog .input-row input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    transition: border-color 0.3s ease;
+}
+
+.rule-dialog .input-row input[type="text"]:focus {
+    border-color: #007acc;
+    box-shadow: 0 0 3px rgba(0, 122, 204, 0.3);
+    outline: none;
+}
+
+.rule-dialog .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.rule-dialog .dialog-buttons button {
+    margin-left: 10px;
+    padding: 8px 15px;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.rule-dialog .dialog-buttons button:hover {
+    background-color: #005a9e;
+}
+
+.event-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.event-radio-group label {
+    margin-right: 10px;
+    white-space: nowrap;
+    margin-top: 10px;
+    width: 150px;
+}
+
+.input-row .event-radio-group + .help-icon {
+    margin-left: auto;
+}
+
+.access-token-row {
+    display: flex;
+    align-items: center;
+}
+
+.access-token-row input[type="password"] {
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.access-token-row .toggle-password {
+    margin-right: 10px;
+}
+
+.access-token-row .checkbox-container {
+    margin-left: 0;
+}
+
+#rules-config {
+    min-width: 300px;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+#rules-config .input-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+#rules-config .input-row label {
+    min-width: 140px;
+    margin-right: 10px;
+    flex: 0 0 auto;
+}
+
+#rules-config .input-row input[type="text"],
+#rules-config .input-row select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#rules-config h2 {
+    cursor: default;
+}
+
+#rules-config .section-checkbox {
+    pointer-events: none;
+}
+
+#rules-config .gitlab-config-divider {
+    border-top: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+}
+
+#rules-config .event-radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#rules-config .event-radio-group label {
+    margin-right: 10px;
+    white-space: nowrap;
+    margin-top: 10px;
+    width: 150px;
+}
+
+#rules-config .input-row .event-radio-group + .help-icon {
+    margin-left: auto;
+}
+
+#rules-dropdown {
+    width: auto;
+}
+
+#endpoint-config h2 {
+    cursor: default;
+}
+
+#gitlab-config .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#gitlab-config .edit-button {
+    background-color: #007acc;
+    color: white;
+    border: none;
+    padding:5px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+#gitlab-config .edit-button:hover {background-color: #005a9e;
+}
+
+#gitlab-config .gitlab-info {
+    margin-top: 10px;
+}
+
+#gitlab-config .gitlab-info p {
+    margin: 5px 0;
+}
+
+#gitlab-config .gitlab-info .label {
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+#gitlab-config .gitlab-info .value {
+    word-break: break-all;
+}
+
+#gitlab-info-dialog {
+    width: 400px;
+}
+
+#gitlab-info-dialog .dialog-content {margin-bottom: 20px}
+
+#gitlab-info-dialog .input-row {
+    margin-bottom: 15px;
+}
+
+#gitlab-info-dialog .input-row label{
+    display: block;
+    margin-bottom: 5px;
+}
+
+#gitlab-info-dialog .input-row input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+}
+
+#gitlab-info-dialog .dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+}
+
+#gitlab-info-dialog .dialog-buttons button {
+    margin-left: 10px;
+}
+
+#gitlab-config .input-row {
+    display: flex;
+    align-items: center;justify: space-between;
+}
+
+#gitlab-config .input-row label{flex: 0 0 auto;
+    margin-right: 10px;
+}
+
+#gitlab-config .input-row span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#gitlab-config .input-row .help-icon {
+    flex: 0 0 auto;
+    margin-left: 10px;
+}
+
+#gitlab-config .password-display-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+#gitlab-config .password-display-container span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#gitlab-config .toggle-password {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    margin-left: 10px;
+}
+
+#gitlab-config .toggle-password:focus {
+    outline: none;
+}
+
+#gitlab-config .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#gitlab-config h2 {
+    flex: 1;
+    margin: 0;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#gitlab-config .edit-button {
+    margin: 0;
+    align-self: center;
+}
+
+@keyframes highlight {
+    0% {
+        background-color: rgba(0, 122, 204, 0.3);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.highlight-animation {
+    animation: highlight 1.5s ease-in-out;
+}
+
+.input-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.input-row label {
+    flex: 0 0 auto;
+    margin-right: 10px;
+}
+
+.input-row .input-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.input-row .input-container select,
+.input-row .input-container input[type="text"] {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.input-row .help-icon {
+    flex: 0 0 auto;
+}
+
+.dialog-message-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.dialog-message-content {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    max-width: 80%;
+    text-align: center;
+}
+
+.dialog-message-content button {
+    margin-top: 10px;
+    padding: 5px 10px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.dialog-message-content button:hover {
+    background-color: #c82333;
+}
+
+.close-error-message {
+    display: block;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#api-key {
+    color: #999;
+}
+
+#api-key:focus {
+    color: #1e1e1e;
+}
+
+#api-key:disabled {
+    background-color: #f5f5f5;
+}
+
+#gitlab-config-message {
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    line-height: 50px;
+    font-size: 18px;
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.hidden-section {
+    display: none;
+}
+
+.hidden-message {
+    display: none;
+}
+
+#response {
+    border-left: 4px solid #007acc;
+}
+
+#response .section-checkbox:checked + .section {
+    border-left: 4px solid #007acc;
+}
+
+.refresh-data-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+    flex-grow: 1;
+    text-align: center;
+}
+.refresh-data-section.hidden-message {
+    display: none;
+}
+
+#refresh-data-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#refresh-data-button:hover {
+    background-color: #218838;
+}
+
+.hidden-on-load {
+    display: none;
+}
+
+.input-row .checkbox-container {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+.input-row .checkbox-container input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.input-row .checkbox-container label {
+    min-width: auto;
+    margin-right: 0;
+}
+
+.input-row .help-icon {
+    margin-left: auto;
+}
+
+#confirm-prompt-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+#confirm-prompt-row label {
+    min-width: 150px;
+    margin-right: 10px;
+    padding-top: 8px;
+}
+
+textarea#confirm-prompt {
+    flex-grow: 1;
+    width: calc(100% - 170px);
+    min-height: 60px;
+    padding: 8px;
+    border: 1px solid #cccedb;
+    border-radius: 2px;
+    resize: vertical;
+}
+
+#confirm-prompt-row .help-icon {
+    margin-left: 10px;
+    flex-shrink: 0;
+}
+
+/* 从index.html移动的内联CSS */
+body { visibility: hidden; }
+.icon-char {
+    font-size: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    text-align: center;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    color: #424242;
+}
+button .icon-char {
+    margin-right: 4px;
+}
+.help-icon.icon-char {
+    cursor: help;
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+}

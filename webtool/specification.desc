@@ -1,0 +1,287 @@
+# 代码评审PE调试工具设计文档
+
+## 1. 概述
+
+### 1.1 项目结构
+
+主入口为index.html，CSS写入style.css，JavaScript代码分散在多个独立的js文件中。
+
+JavaScript文件结构如下：
+- script.js：JS代码入口
+- custom.js：AJAX核心代码
+- dialog.js：对话框代码（除帮助窗口外）
+- help.js：帮助窗口代码
+- progress.js：右侧报告区域进度相关代码
+- result.js：右侧报告区域总体框架
+- section.js：左侧各个section的UI展现代码
+- section_action.js：左侧各个section的行为代码
+- util.js：工具类代码
+- variable.js：全局变量
+
+### 1.2 JavaScript规范
+
+- 采用export/import模式，由script.js统一调用。
+- 使用Axios库发送AJAX请求，通过CDN方式引入。
+- js-yaml库也通过CDN方式引入。
+- 函数参数过多时，采用对象参数形式。
+
+### 1.3 映射关系
+
+定义一个vars对象来封装所有的全局变量，定义在variables.js中。
+
+建立如下映射关系：
+
+1. triggerEventMapping：代码仓库服务端与UI label映射
+   - push: Push
+   - merge: Merge Request
+
+2. inbuiltSections：表示内置的section信息及顺序
+```javascript
+export const inbuiltSections = [
+    'system',
+    'business',
+    'sql',
+    'requirement',
+    'task',
+    'output',
+    'other',
+    'response'
+];
+```
+
+3. nonCancelableSections：表示固定不变的section，在各种界面操作中需要被排除的section名称
+```json
+['endpoint-config', 'gitlab-config', 'toolbar']
+```
+
+4. typeMapping：界面"类型"与服务器类型映射
+```javascript
+export const typeMapping = {
+    'whole': 'all',
+    'files': 'single',
+    'diffs': 'diff'
+};
+```
+
+### 1.4 风格
+
+整个项目使用Visual Studio Light风格。
+
+### 1.5 URL规范
+
+通过URL中的参数记录当前选中的rule。进入页面时或刷新规则后，将根据URL参数来选中规则下拉框中的选项，并初始化界面数据。
+
+## 2. 功能设计
+
+### 2.1 页面初始化
+
+1. 页面加载时，请求多个YAML资源：
+   - GET {当前页面root uri}/template.all.yaml
+   - GET {当前页面root uri}/template.diff.yaml
+   - GET {当前页面root uri}/template.single.yaml
+
+2. 解析获取的资源，保存在全局变量templates[type]中，其中type为all/single/diff。
+
+3. 初始化"类型"下拉框，并根据当前选中的类型初始化"模板"下拉框。
+
+4. 调用is_ready()函数判断是否已配置Endpoint和Gitlab信息，相应显示或隐藏gitlab-config-message和initially-hidden元素。
+
+5. 根据URL参数初始化规则下拉框的选中项，并初始化界面数据。如果规则下拉框为空，应允许此种情况，不报错。
+
+6. 初始化时触发updateCommitInputs函数，根据选中的类型显示或隐藏相应的Commit ID输入框。
+
+7. 初始化"二次检查"复选框，默认为不选中状态。
+
+8. 调用updateConfirmComponents函数，根据"二次检查"复选框的状态初始化"二次检查提示词"文本框的显示状态。
+
+### 2.2 规则刷新
+
+1. Endpoint失去焦点或Gitlab配置完成时触发规则刷新。
+
+2. 刷新前判断Endpoint、Gitlab信息是否填写完整，不完整则给出错误提示。
+
+3. 刷新成功后更新规则下拉框，失败则调用setup_guide(false)显示错误信息和"刷新数据"按钮。
+
+4. 规则刷新时，同时更新"二次检查"复选框的状态，根据规则中的confirm属性（true/false）设置复选框是否选中。
+
+5. 规则刷新后，调用updateConfirmComponents函数更新"二次检查提示词"文本框的显示状态。
+
+### 2.3 Section初始化
+
+设计initializeSections(rule)函数统一完成Section的初始化：
+
+1. 清理操作：除Endpoint配置、Gitlab配置、Toolbar外，取消所有Section的checkbox，移除自定义section。
+
+2. 计算显示字段和顺序：优先使用rule.order，否则按照inbuiltSections的顺序排列。
+
+3. 按顺序加载各section数据：
+   - 去除value前后空格和空行
+   - 如果value首行以冒号(:或：)结尾，将首行视为guide，其余为section值；否则guide为空，整体为section值
+
+4. 确保system section（如存在）排在非固定section的最上方。
+
+5. 调用updateConfirmComponents函数，根据"二次检查"复选框的状态更新"二次检查提示词"文本框的显示状态。
+
+6. 对于自定义section（如web_design），使用addCustomSection(key, guide, value)创建section，并正确设置data-name属性。
+
+7. 在处理自定义section时，确保正确获取并设置name、guide和value输入框的值。
+
+### 2.4 代码评审
+
+1. 发送POST请求进行代码评审时，将当前选中的rule name作为rule_name字段一并传递。
+
+2. 响应中的commit_id设置给隐藏域code-review-commit-id。
+
+3. 请求结果时，使用code-review-commit-id作为commit_id参数。
+
+4. 在发送代码评审请求时，将"二次检查"的状态作为confirm参数（true/false）一并传递。
+
+5. 如果"二次检查"被启用，将"二次检查提示词"文本框的内容作为confirm_prompt参数一并传递。
+
+### 2.5 界面交互
+
+1. 当"类型"下拉框选项变化时，更新"模板"下拉框选项。
+
+2. 当"模板"下拉框选项变化时，更新各section的内容。
+
+3. 当section的checkbox状态变化时，更新相应section的显示/隐藏状态。
+
+4. 当"二次检查"复选框状态变化时，调用updateConfirmComponents函数更新"二次检查提示词"文本框的显示状态。
+
+5. "查看提示词"和"保存提示词"按钮点击时，弹出相应的对话框。
+
+6. "刷新数据"按钮点击时，触发规则刷新。
+
+### 2.6 用户提示词处理
+
+在右侧"执行进度"中的"用户提示词"处理逻辑如下：
+
+1. 检查bedrock_prompt字段是否为JSON数组格式。
+2. 如果是JSON数组，解析为JavaScript数组。
+3. 如果是数组，将数组元素以特定格式显示在多行文本输入框中：
+   - 每个元素占一行
+   - 元素之间用50个连字符（-）分隔
+   - 最后一个元素后不添加分隔线
+
+示例代码：
+
+```javascript
+function formatUserPrompts(bedrock_prompt) {
+    let prompts;
+    try {
+        prompts = JSON.parse(bedrock_prompt);
+    } catch (e) {
+        // 如果解析失败，则认为是字符串
+        return bedrock_prompt;
+    }
+
+    if (Array.isArray(prompts)) {
+        return prompts.join('\n\n--------------------------------------------------\n\n');
+    } else {
+        // 如果不是数组，则直接返回原字符串
+        return bedrock_prompt;
+    }
+}
+```
+
+## 3. 样式要求
+
+1. 使用指南dialog中，底部翻页和页码需要居中显示。
+
+2. "刷新数据"按钮所在section不需要border和background，按钮居中且醒目。
+
+3. 查看提示词、保存提示词的dialog中，显示的信息通常包含TAG，需确保正确显示。
+
+4. "二次检查"的help icon应与其他行的help icon保持一致的对齐方式。
+
+5. "二次检查提示词"文本框应使用flex布局，参考"目标文件清单"的样式，确保多行文本输入框正确显示。
+
+## 4. 全局函数
+
+### 4.1 is_ready()
+
+用于判断是否已经配置了Endpoint和Gitlab信息。当is_ready()返回true时，gitlab-config-message隐藏且initially-hidden的元素显示；否则相反。
+
+```javascript
+function is_ready() {
+  // 直接计算Endpoint和Gitlab信息是否填写完整
+  // 返回布尔值
+}
+```
+
+### 4.2 setup_guide(is_succ)
+
+用于显示/隐藏"刷新按钮"和gitlab-config-message。
+
+```javascript
+function setup_guide(is_succ) {
+  // 根据is_succ参数和is_ready()的结果
+  // 控制"刷新按钮"和gitlab-config-message的显示/隐藏
+}
+```
+
+### 4.3 getUrlAnchor()
+
+用于计算URL中的Rule Anchor。
+
+```javascript
+function getUrlAnchor() {
+  // 解析URL，返回anchor值
+}
+```
+
+### 4.4 通用Dialog方法
+
+实现一个通用的showDialog方法，包含特定参数和功能。
+
+### 4.5 get_dict_key(obj, value)
+
+在util.js中实现，用于返回obj中值为value的key，找不到则返回null。
+
+### 4.6 updateCommitInputs()
+
+统一处理commit区域的变化，根据选中的类型显示或隐藏相应的Commit ID输入框。所有需要更新commit输入框显示状态的地方都调用此函数。
+
+### 4.7 updateConfirmComponents()
+
+专门处理"二次检查"相关控件的更新。根据"二次检查"复选框的状态，显示或隐藏"二次检查提示词"文本框。
+
+```javascript
+function updateConfirmComponents() {
+  const confirmCheckbox = document.getElementById('confirm-checkbox');
+  const confirmPromptTextarea = document.getElementById('confirm-prompt-textarea');
+  
+  if (confirmCheckbox.checked) {
+    confirmPromptTextarea.style.display = 'block';
+  } else {
+    confirmPromptTextarea.style.display = 'none';
+  }
+}
+```
+
+## 5. AJAX请求
+
+在custom.js中实现以下AJAX请求：
+
+1. 获取YAML模板资源
+2. 刷新规则
+3. 发送代码评审请求
+4. 获取评审结果
+
+使用Axios库发送这些请求，并处理响应。在处理响应时，特别注意bedrock_prompt字段的处理：
+
+```javascript
+function processBedrock_prompt(bedrock_prompt) {
+    try {
+        const parsedPrompt = JSON.parse(bedrock_prompt);
+        if (Array.isArray(parsedPrompt)) {
+            return parsedPrompt;
+        }
+    } catch (e) {
+        // 如果解析失败，则认为是字符串
+    }
+    return bedrock_prompt;
+}
+```
+
+在处理评审结果时，使用上述函数处理bedrock_prompt字段，然后再传递给formatUserPrompts函数进行格式化显示。

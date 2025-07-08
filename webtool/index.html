@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码评审PE调试工具 v1.2</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="page-header">
+        <h1>代码评审PE调试工具 v1.2</h1>
+    </header>
+    <div id="main-container">
+        <div id="left-panel">
+            <div class="section-wrapper">
+                <input type="checkbox" class="section-checkbox" disabled checked>
+                <div class="section" id="endpoint-config">
+                    <h2>Endpoint配置</h2>
+                    <div class="section-content">
+                        <div class="input-row">
+                            <label for="endpoint">Endpoint:</label>
+                            <input type="text" id="endpoint">
+                            <span class="help-icon icon-char" data-tooltip="代码评审服务的API地址">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="api-key">API Key:</label>
+                            <input type="text" id="api-key" placeholder="不需要填写API Key" disabled>
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="enable-api-key">
+                                <label for="enable-api-key">启用</label>
+                            </div>
+                            <span class="help-icon icon-char" data-tooltip="访问代码评审服务所需的密钥">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="model-select">模型:</label>
+                            <select id="model-select">
+                                <option value="claude3.5-sonnet">Claude3.5 Sonnet</option>
+                                <option value="claude3-opus">Claude3 Opus</option>
+                                <option value="claude3-sonnet">Claude3 Sonnet</option>
+                                <option value="claude3-haiku">Claude3 Haiku</option>
+                            </select>
+                            <span class="help-icon icon-char" data-tooltip="选择用于代码评审的AI模型">ⓘ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <input type="checkbox" class="section-checkbox" disabled checked>
+                <div class="section" id="gitlab-config">
+                    <h2>
+                        Gitlab配置
+                        <button id="edit-gitlab-info" class="edit-button">编辑</button>
+                    </h2>
+                    <div class="section-content">
+                        <div class="gitlab-config-top">
+                            <div class="input-row">
+                                <label>Gitlab地址:</label>
+                                <span id="gitlab-url-display" class="gitlab-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="Gitlab项目的完整URL地址">ⓘ</span>
+                            </div>
+                            <div class="input-row">
+                                <label>Access Token:</label>
+                                <span id="access-token-display" class="gitlab-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="用于访问Gitlab API的个人访问令牌。&#10;读取信息，至少需要Reporter角色的read api权限&#10;读写信息，至少需要Developer角色的read & write api权限">ⓘ</span>
+                            </div>
+                            <div class="input-row">
+                                <label>Branch:</label>
+                                <span id="gitlab-branch-display" class="gitlab-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="Repository Branch">ⓘ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-wrapper hidden-on-load">
+                <input type="checkbox" class="section-checkbox" disabled checked>
+                <div class="section" id="rules-config">
+                    <h2>规则配置</h2>
+                    <div class="section-content">
+                        <div class="input-row">
+                            <label for="rules-dropdown">规则:</label>
+                            <select id="rules-dropdown" class="rules-dropdown">
+                            </select>
+                            <button id="refresh-rules" class="icon-btn" title="刷新规则">
+                                <span class="icon-char">↻</span>
+                            </button>
+                            <button id="new-rule" class="icon-btn" title="新增规则">
+                                <span class="icon-char">+</span>
+                            </button>
+                            <span class="help-icon icon-char" data-tooltip="规则清单源自代码仓库中/.codereview下yaml配置文件">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="trigger-event">触发事件:</label>
+                            <div class="event-radio-group">
+                                <label><input type="radio" name="trigger-event" value="merge" checked>Merge Request</label>
+                                <label><input type="radio" name="trigger-event" value="push">Push</label>
+                            </div>
+                            <span class="help-icon icon-char" data-tooltip="Gitlab在什么事件时候触发代码评审">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="target-file-list">目标文件清单:</label>
+                            <input type="text" id="target-file-list">
+                            <span class="help-icon icon-char" data-tooltip="指定参与评审的文件规则，逗号分隔，使用*和**作为通配符。&#10;例如：&quot;src/**Service.java, src/resource/*.xml, readme.md&quot;">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="gitlab-type">类型:</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="type" value="whole" checked> whole</label>
+                                <label><input type="radio" name="type" value="files"> files</label>
+                                <label><input type="radio" name="type" value="diffs"> diffs</label>
+                            </div>
+                            <span class="help-icon icon-char" data-tooltip="whole是整库代码评审，指定commit版本下整库代码一次性提交给大模型 &#10;files是单文件评审，commit区间中有变化的文件逐个提交给大模型 &#10;diffs是代码差异评审，commit区间中有变化的文件逐个将代码差异提交给大模型">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="confirm">二次检查:</label>
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="confirm" name="confirm">
+                                <label for="confirm">启用</label>
+                            </div>
+                            <span class="help-icon icon-char" data-tooltip="启用二次检查时，将调用两次大模型 &#10;第二次用于确认结论正确性，可以大幅提高评审结论正确性。">ⓘ</span>
+                        </div>
+                        <div class="input-row" id="confirm-prompt-row">
+                            <label for="confirm-prompt">二次检查提示词:</label>
+                            <textarea id="confirm-prompt" rows="3">
+                                请进行二次确认，检查你的答案的正确性。并将最新的结论按照<output></output><thought></thought>的方式进行输出。
+                                你最新的结论输出到<output>中，你的思考过程输出到<thought>中，<output>和<thought>标签之外不应该有任何其他信息。
+                            </textarea>
+                            <span class="help-icon icon-char" data-tooltip="二次检查时使用的提示词">ⓘ</span>
+                        </div>
+                    </div>
+                    <div class="gitlab-config-divider"></div>
+                    <div>
+                        <div id="commit-whole">
+                            <div class="input-row">
+                                <label for="commit-id">Commit ID:</label>
+                                <input type="text" id="commit-id" placeholder="留空表示最新一次Commit ID，1表示第一个commit id">
+                                <span class="help-icon icon-char" data-tooltip="指定的Commit ID">ⓘ</span>
+                            </div>
+                        </div>
+                        <div id="commit-range">
+                            <div class="input-row">
+                                <label for="from-commit-id">From Commit ID:</label>
+                                <input type="text" id="from-commit-id" placeholder="留空表示最新一次Commit ID，1表示第一个commit id">
+                                <span class="help-icon icon-char" data-tooltip="开始的Commit ID（不包含）&#10;例如 From Commit ID = A, To Commit ID = B，&#10;则评审范围是A与B之间的Commit代码，包含B，不包含A。">ⓘ</span>
+                            </div>
+                            <div class="input-row">
+                                <label for="to-commit-id">To Commit ID:</label>
+                                <input type="text" id="to-commit-id" placeholder="留空表示最新一次Commit ID，1表示第一个commit id">
+                                <span class="help-icon icon-char" data-tooltip="结束的Commit ID（包含）&#10;例如 From Commit ID = A, To Commit ID = B，&#10;则评审范围是A与B之间的Commit代码，包含B，不包含A。">ⓘ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-wrapper hidden-on-load">
+                <input type="checkbox" class="section-checkbox" checked disabled>
+                <div class="section toolbar">
+                    <div class="toolbar-content">
+                        <div class="toolbar-left">
+                            <button id="clear-btn" class="icon-btn" title="Clear">
+                                <span class="icon-char">✕</span>
+                            </button>
+                        </div>
+                        <div class="toolbar-right">
+                            <div class="template-select">
+                                <label for="template-dropdown">模板:</label>
+                                <select id="template-dropdown"></select>
+                            </div>
+                            <button id="export-btn" class="icon-btn" title="Export">
+                                <span class="icon-char">⤓</span>
+                            </button>
+                            <button id="help-btn" class="icon-btn" title="Help">
+                                <span class="icon-char">?</span>
+                            </button>
+                        </div>
+                    </div>                    
+                </div>
+            </div>
+            <div class="section-wrapper hidden-on-load">
+                <input type="checkbox" class="section-checkbox" checked disabled>
+                <div class="section" id="system">
+                    <h2>系统提示词</h2>
+                    <div class="section-content">
+                        <textarea id="system-text" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>          
+            <div id="sortable-sections" class="hidden-on-load">
+                <div class="section-wrapper">
+                    <input type="checkbox" id="business-check" class="section-checkbox" checked>
+                    <div id="business" class="section" data-config-name="business">
+                        <h2>项目描述</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="business-guide">引导语:</label>
+                                <input type="text" id="business-guide" value="项目信息如下：">
+                            </div>
+                            <textarea id="business-text"></textarea>
+                        </div>
+                    </div>
+                </div>                    
+                <div class="section-wrapper">
+                    <input type="checkbox" id="sql-check" class="section-checkbox" checked>
+                    <div id="sql" class="section" data-config-name="sql">
+                        <h2>数据库表结构</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="sql-guide">引导语:</label>
+                                <input type="text" id="sql-guide" value="数据库表结构如下：">
+                            </div>
+                            <textarea id="sql-text"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-wrapper">
+                    <input type="checkbox" id="requirement-check" class="section-checkbox" checked>
+                    <div id="requirement" class="section" data-config-name="requirement">
+                        <h2>你的规范</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="requirement-guide">引导语:</label>
+                                <input type="text" id="requirement-guide" value="规范如下：">
+                            </div>
+                            <textarea id="requirement-text"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-wrapper">
+                    <input type="checkbox" id="keypoint-check" class="section-checkbox" checked>
+                    <div id="keypoint" class="section" data-config-name="keypoint">
+                        <h2>重难点介绍</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="keypoint-guide">引导语:</label>
+                                <input type="text" id="keypoint-guide" value="重难点如下：">
+                            </div>
+                            <textarea id="keypoint-text"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-wrapper">
+                    <input type="checkbox" id="output-check" class="section-checkbox" checked>
+                    <div id="output" class="section" data-config-name="output">
+                        <h2>输出格式要求</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="output-guide">引导语:</label>
+                                <input type="text" id="output-guide" value="输出格式要求如下：">
+                            </div>
+                            <textarea id="output-text"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-wrapper">
+                    <input type="checkbox" id="other-check" class="section-checkbox" checked>
+                    <div id="other" class="section" data-config-name="other">
+                        <h2>其他要求</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="other-guide">引导语:</label>
+                                <input type="text" id="other-guide" value="其他要求如下：">
+                            </div>
+                            <textarea id="other-text"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-wrapper">
+                    <input type="checkbox" id="task-check" class="section-checkbox" checked>
+                    <div id="task" class="section" data-config-name="task">
+                        <h2>你的任务</h2>
+                        <div class="section-content">
+                            <div class="input-row">
+                                <label for="task-guide">引导语:</label>
+                                <input type="text" id="task-guide" value="你的任务如下：">
+                            </div>
+                            <textarea id="task-text"></textarea></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-wrapper hidden-on-load">
+                <input type="checkbox" id="response-check" class="section-checkbox" checked>
+                <div id="response" class="section" data-config-name="response">
+                    <h2>输出要求</h2>
+                    <div class="section-content">
+                        <div class="input-row">
+                            <label for="response-guide">引导语:</label>
+                            <input type="text" id="response-guide" value="">
+                        </div>
+                        <textarea id="response-text">注意：请将你的结论输出成为JSON形式，填写在<output></output>标签中。标签中的内容我讲通过JSON来解析，千万不要放置非JSON内容。</textarea>
+                    </div>
+                </div>
+            </div>            
+            <div class="button-row hidden-on-load"><button id="add-section">增加配置</button>
+                <div class="button-group">
+                    <button id="view-prompt">查看提示词</button>
+                    <button id="save-prompt">保存提示词</button>
+                    <button id="execute-review">执行代码评审</button>
+                </div>
+            </div>
+            <div class="section-wrapper">
+                <div class="refresh-data-section" id="refresh-data-section">
+                    <button id="refresh-data">刷新数据</button>
+                </div>
+            </div>
+        </div>
+        <div id="right-panel">
+            <div class="tab-header">
+                <button class="tab-button active" data-tab="progress">执行进度</button>
+                <button class="tab-button" data-tab="report">评审报告</button>
+            </div>
+            <div id="progress-tab" class="tab-content active">
+                <div id="progress-content"></div>
+                <div id="gitlab-config-message" class="gitlab-config-message hidden-message">请先完成Gitlab配置，然后可进入下一步操作</div>
+            </div>
+            <div id="report-tab" class="tab-content">
+                <iframe id="report-frame"></iframe>
+            </div>
+        </div>
+    </div>
+    <div id="help-dialog-overlay" class="dialog-overlay" style="display: none;">
+        <div class="dialog help-dialog">
+            <h3>使用指南</h3>
+            <div class="help-content">
+                <div id="help-text" class="help-text">
+                    <div id="page1" class="help-page">
+                        <h4>使用说明</h4>
+                        <p><strong>1、简单使用</strong></p>
+                        <p>填写Gitlab地址、Access Token、Branch、Commit信息后，选择模板，点击「执行代码评审」按钮即可看到进度和报告。</p>
+                        <p><strong>2、Demo Endpoint</strong></p>
+                        <p>https://endpoint.cr.teonbox.com/codereview，无需API Key</p>
+                        <p>此为公共Endpoint，如果您对数据安全有要求，请在自己环境部署Solution。</p>
+                        <p><strong>3、异常说明</strong></p>
+                        <p>如Demo Endpoint无法使用，可能因为调用过多，或者demo在进行调整所致。</p>
+                        <p>稳定使用推荐在自己环境部署Solution，详情请联系Account SA。</p>
+                    </div>
+                    <div id="page2" class="help-page" style="display: none;">
+                        <h4>小技巧</h4>
+                        <p>1、可以选择通过内置的模板来化简使用。</p>
+                        <p>2、模块可以通过拖动标题调整顺序</p>
+                        <p>3、进度信息中可拷贝「用户提示词」直接在BRClient中运行</p>
+                        <p>4、进度信息中可拷贝「Bedrock Payload」用于API调用</p>
+                    </div>                        
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button id="prev-page" disabled>上一页</button>
+                <span id="page-indicator">第 1 页 / 共 2 页</span>
+                <button id="next-page">下一页</button>
+            </div>
+            <div class="show-on-startup">
+                <input type="checkbox" id="show-help-on-startup" checked>
+                <label for="show-help-on-startup">启动时显示</label>
+            </div>
+        </div>
+    </div>
+    <!-- 新增 通用对话框 的 DOM 元素 -->
+    <div id="common-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog" data-style="default">
+            <h3 id="common-dialog-title"></h3>
+            <div id="common-dialog-content" class="dialog-content">
+                <div class="dialog-message-mask" style="display: none;"></div>
+            </div>
+            <div id="common-dialog-buttons" class="dialog-buttons"></div>
+        </div>
+    </div>
+    <!-- 新增 新增规则对话框 的 DOM 元素 -->
+    <div id="new-rule-dialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog">
+            <h3>新增规则</h3>
+            <div class="dialog-content">
+                <div class="input-row">
+                    <label for="new-rule-name">规则名称:</label>
+                    <input type="text" id="new-rule-name">
+                </div>
+                <div class="input-row">
+                    <label for="new-rule-filename">文件名称:</label>
+                    <input type="text" id="new-rule-filename">
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button id="confirm-new-rule">确认</button>
+                <button id="cancel-new-rule">取消</button>
+            </div>
+        </div>
+    </div>
+    <!-- <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://gcore.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script> -->
+    <script src="./axios.min.js"></script>
+    <script src="./js-yaml.min.js"></script>
+    <script type="module" src="script.js"></script>
+    <div id="toast-message" class="toast-message"></div>
+    <input type="hidden" id="code-review-commit-id">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.style.visibility = 'visible';
+        });
+    </script>
+</body>
+</html>

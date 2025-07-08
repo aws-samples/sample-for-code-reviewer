@@ -1,0 +1,16 @@
+[
+	{
+		"repository_url": "https://gitlab.com/namespace/project",
+		"branch_regexp": "main",
+		"event_push": "",
+		"event_merge_request": "all",
+		"description": "main分支，在每次merge request申请时，对有整库进行代码检查"
+	},
+	{
+		"repository_url": "https://gitlab.com/namespace/project",
+		"branch_regexp": "^(?!main$).*",
+		"event_push": "single",
+		"event_merge_request": "",
+		"description": "非main分支，在每次push时，对有修改的文件进行单文件模式代码检查"
+	}
+]
