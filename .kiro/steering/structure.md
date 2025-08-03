@@ -44,7 +44,7 @@
 - **cron_function.py**: 清理和超时处理
 
 ### 配置与模板
-- **report_template.html**: 代码评审报告的HTML模板
+- **report_template.html**: 代码评审报告的HTML模板，支持动态字段替换和样式自定义
 - **repos.json**: DynamoDB设置的初始仓库配置
 - **rules.json**: DynamoDB初始化的默认评审规则
 - **data_initializer.py**: 将repos.json和rules.json处理到DynamoDB表中
@@ -56,7 +56,7 @@
 - **custom.js**: API通信
 - **section.js**: 左侧面板UI组件
 - **result.js**: 右侧面板结果显示
-- **progress.js**: 进度跟踪UI
+- **progress.js**: 进度跟踪UI，每1秒轮询API获取任务状态
 - **template.*.yaml**: 评审规则模板
 
 ## 命名约定

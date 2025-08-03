@@ -43,10 +43,16 @@ Code Reviewer是一个基于AWS构建的无服务器AI代码评审解决方案�
 
 ## 数据库设计
 - **Request表**: 分区键`commit_id`，排序键`request_id`，包含TaskStatusIndex全局二级索引
-- **Task表**: 分区键`request_id`，排序键`number`(数字类型)
+- **Task表**: 分区键`request_id`，排序键`number`(数字类型，通过递增计数器生成)
 - **计费模式**: 按需付费(PAY_PER_REQUEST)
 - **加密**: AWS托管加密
 - **备份**: 启用时间点恢复
+
+## 报告系统
+- **HTML模板**: 位于lambda/report_template.html，支持动态字段替换
+- **样式自定义**: 使用标准HTML/CSS，可直接修改模板文件
+- **内容填充**: 通过JavaScript动态填充报告内容
+- **进度跟踪**: Web工具每1秒轮询获取任务状态，实时显示详细信息
 
 ## 配置系统
 - **系统提示**: 每个规则文件支持自定义`system`字段用于Claude提示
