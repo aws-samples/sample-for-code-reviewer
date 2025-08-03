@@ -48,7 +48,7 @@
 - **repos.json**: DynamoDB设置的初始仓库配置
 - **rules.json**: DynamoDB初始化的默认评审规则
 - **data_initializer.py**: 将repos.json和rules.json处理到DynamoDB表中
-- **cloudfront_func.js**: Web工具路由的CloudFront函数
+- **cloudfront_func.js**: Web工具路由的CloudFront函数，处理`/webtool/`和`/`路径重定向到`/webtool/index.html`
 
 ## Web工具 (`webtool/`)
 - **index.html**: 主界面

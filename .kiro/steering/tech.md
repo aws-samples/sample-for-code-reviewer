@@ -26,6 +26,13 @@
 - **自定义模块**: 组织在lambda/目录中
 - **可扩展设计**: 通过codelib.py抽象仓库集成，为未来GitHub/CodeCommit支持预留接口
 
+## 项目配置
+- **项目名称**: 通过CDK CloudFormation参数`ProjectName`设置，默认值为`aws-code-reviewer`
+- **资源命名**: 所有AWS资源名称使用`{project_name}-{resource_type}`格式
+- **API密钥**: 可选配置，通过`EnableApiKey`参数控制
+- **SMTP配置**: 支持邮件通知，需配置SMTPServer、SMTPPort、SMTPUsername、SMTPPassword等参数
+- **Bedrock配置**: 可选配置访问密钥、密钥和区域参数
+
 ## 常用命令
 
 ### 开发与测试

@@ -39,7 +39,14 @@ Code Reviewer是一个基于AWS构建的无服务器AI代码评审解决方案�
 - 超时处理和故障恢复机制
 - 通过模块化评审方法支持大型代码库
 - 可扩展的仓库集成设计 (目前支持GitLab，未来支持GitHub/CodeCommit)
-- 简单的成本模型，暂无内置成本控制 (将根据使用模式添加)
+- 简单的成本模型，暂无内置成本控制
+
+## 数据库设计
+- **Request表**: 分区键`commit_id`，排序键`request_id`，包含TaskStatusIndex全局二级索引
+- **Task表**: 分区键`request_id`，排序键`number`(数字类型)
+- **计费模式**: 按需付费(PAY_PER_REQUEST)
+- **加密**: AWS托管加密
+- **备份**: 启用时间点恢复
 
 ## 配置系统
 - **系统提示**: 每个规则文件支持自定义`system`字段用于Claude提示
