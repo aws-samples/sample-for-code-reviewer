@@ -25,14 +25,13 @@ import os
 # 添加lambda目录到路径，使测试能够导入被测试模块
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../lambda'))
 
-# Mock策略：通过 sys.modules 完全隔离外部依赖
-# 这样避免了安装复杂依赖，同时保证测试的独立性和速度
-mock_boto3 = Mock()
+# Mock策略：只Mock真正不可控的外部依赖
+# 根据新的测试策略，我们使用真实的AWS服务，只Mock GitLab API等外部依赖
 mock_gitlab = Mock()
 mock_awslambdaric = Mock()
 mock_logger = Mock()
 
-sys.modules['boto3'] = mock_boto3
+# 不再Mock boto3，让AWS服务真实执行
 sys.modules['gitlab'] = mock_gitlab
 sys.modules['gitlab.exceptions'] = Mock()
 sys.modules['awslambdaric'] = mock_awslambdaric
@@ -779,70 +778,56 @@ class TestRequestHandler:
             
             # 验证 DynamoDB 初始记录创建（使用真实数据库）
             import time
-            
-            # 临时恢复真实的boto3来进行数据库验证
-            import importlib
-            import sys
-            
-            # 保存当前的Mock
-            original_boto3_mock = sys.modules['boto3']
-            
-            # 临时移除Mock，导入真实的boto3
-            del sys.modules['boto3']
             import boto3
             
-            try:
-                dynamodb = boto3.resource('dynamodb')
-                table = dynamodb.Table(os.environ['REQUEST_TABLE'])
+            dynamodb = boto3.resource('dynamodb')
+            table = dynamodb.Table(os.environ['REQUEST_TABLE'])
+            
+            # 验证初始记录存在
+            response = table.get_item(
+                Key={
+                    'commit_id': actual_commit_id,
+                    'request_id': actual_request_id
+                }
+            )
+            
+            assert 'Item' in response, "数据库中应该存在初始创建的记录"
+            initial_item = response['Item']
+            assert initial_item['task_status'] == 'Start', "初始状态应该为 Start"
+            assert initial_item['project_name'] == 'Test Project', "项目名称应该正确"
+            
+            # 验证GitLab API被正确调用
+            mock_gitlab_class.assert_called_once()
+            mock_gl.projects.get.assert_called_once_with('test/awesome-project')
+            
+            # 等待 task_dispatcher 异步执行（真实的Lambda调用需要时间）
+            print("等待task_dispatcher异步执行...")
+            time.sleep(3)  # 等待异步处理
+            
+            # 再次检查记录状态，验证 task_dispatcher 是否执行了更新
+            updated_response = table.get_item(
+                Key={
+                    'commit_id': actual_commit_id,
+                    'request_id': actual_request_id
+                }
+            )
+            
+            if 'Item' in updated_response:
+                updated_item = updated_response['Item']
+                print(f"Updated task_status: {updated_item.get('task_status')}")
+                print(f"Task total: {updated_item.get('task_total', 0)}")
+                print(f"Task complete: {updated_item.get('task_complete', 0)}")
                 
-                # 验证初始记录存在
-                response = table.get_item(
-                    Key={
-                        'commit_id': actual_commit_id,
-                        'request_id': actual_request_id
-                    }
-                )
-                
-                assert 'Item' in response, "数据库中应该存在初始创建的记录"
-                initial_item = response['Item']
-                assert initial_item['task_status'] == 'Start', "初始状态应该为 Start"
-                assert initial_item['project_name'] == 'Test Project', "项目名称应该正确"
-                
-                # 验证GitLab API被正确调用
-                mock_gitlab_class.assert_called_once()
-                mock_gl.projects.get.assert_called_once_with('test/awesome-project')
-                
-                # 等待 task_dispatcher 异步执行（真实的Lambda调用需要时间）
-                print("等待task_dispatcher异步执行...")
-                time.sleep(3)  # 等待异步处理
-                
-                # 再次检查记录状态，验证 task_dispatcher 是否执行了更新
-                updated_response = table.get_item(
-                    Key={
-                        'commit_id': actual_commit_id,
-                        'request_id': actual_request_id
-                    }
-                )
-                
-                if 'Item' in updated_response:
-                    updated_item = updated_response['Item']
-                    print(f"Updated task_status: {updated_item.get('task_status')}")
-                    print(f"Task total: {updated_item.get('task_total', 0)}")
-                    print(f"Task complete: {updated_item.get('task_complete', 0)}")
-                    
-                    # 验证task_dispatcher确实执行了（状态应该有变化）
-                    if updated_item.get('task_status') != 'Start':
-                        print("✅ task_dispatcher已执行并更新了状态")
-                    else:
-                        print("⚠️  task_dispatcher可能还在执行中或执行失败")
-                
-                # 清理测试数据
-                table.delete_item(
-                    Key={
-                        'commit_id': actual_commit_id,
-                        'request_id': actual_request_id
-                    }
-                )
-            finally:
-                # 恢复boto3的Mock
-                sys.modules['boto3'] = original_boto3_mock
+                # 验证task_dispatcher确实执行了（状态应该有变化）
+                if updated_item.get('task_status') != 'Start':
+                    print("✅ task_dispatcher已执行并更新了状态")
+                else:
+                    print("⚠️  task_dispatcher可能还在执行中或执行失败")
+            
+            # 清理测试数据
+            table.delete_item(
+                Key={
+                    'commit_id': actual_commit_id,
+                    'request_id': actual_request_id
+                }
+            )
