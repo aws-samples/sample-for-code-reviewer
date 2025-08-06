@@ -255,7 +255,11 @@ class MockRepositoryManager:
         file_full_path = repo_path / "main" / commit_id / file_path
         
         if file_full_path.exists():
-            return file_full_path.read_text(encoding='utf-8')
+            if file_full_path.is_file():
+                return file_full_path.read_text(encoding='utf-8')
+            elif file_full_path.is_dir():
+                # 目录不能直接读取内容，抛出异常
+                raise GitlabGetError("Cannot read directory as file", response_code=400)
         return None
     
     def _generate_diff(self, from_content: str, to_content: str, file_path: str) -> str:

@@ -8,27 +8,40 @@
           "commit_id": "d9366c45986f0717662d37887db7fd98141354c0",
           "message": "Initial commit",
           "parent_ids": [],
-          "files": ["README.md"],
+          "files": [
+            "README.md"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "a1b2c3d4e5f6789012345678901234567890abcd",
           "message": "Add git ignore file",
-          "parent_ids": ["d9366c45986f0717662d37887db7fd98141354c0"],
-          "files": [".gitignore"],
+          "parent_ids": [
+            "d9366c45986f0717662d37887db7fd98141354c0"
+          ],
+          "files": [
+            ".gitignore"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "b2c3d4e5f6789012345678901234567890abcdef",
           "message": "增加pom.xml和主程序App.java",
-          "parent_ids": ["a1b2c3d4e5f6789012345678901234567890abcd"],
-          "files": ["pom.xml", "src/main/java/demo/great/App.java"],
+          "parent_ids": [
+            "a1b2c3d4e5f6789012345678901234567890abcd"
+          ],
+          "files": [
+            "pom.xml",
+            "src/main/java/demo/great/App.java"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "c3d4e5f6789012345678901234567890abcdef12",
           "message": "增加base和config包",
-          "parent_ids": ["b2c3d4e5f6789012345678901234567890abcdef"],
+          "parent_ids": [
+            "b2c3d4e5f6789012345678901234567890abcdef"
+          ],
           "files": [
             "src/main/java/demo/great/base/BaseEntity.java",
             "src/main/java/demo/great/base/BaseService.java",
@@ -39,15 +52,22 @@
         },
         {
           "commit_id": "d4e5f6789012345678901234567890abcdef1234",
-          "message": "Add .codereview",
-          "parent_ids": ["c3d4e5f6789012345678901234567890abcdef12"],
-          "files": [".codereview.yaml"],
+          "message": "Add rules for codereview",
+          "parent_ids": [
+            "c3d4e5f6789012345678901234567890abcdef12"
+          ],
+          "files": [
+            ".codereview/code-simplification.yaml",
+            ".codereview/database-master-slave-issue.yaml"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "e5f6789012345678901234567890abcdef123456",
           "message": "增加Entity",
-          "parent_ids": ["d4e5f6789012345678901234567890abcdef1234"],
+          "parent_ids": [
+            "d4e5f6789012345678901234567890abcdef1234"
+          ],
           "files": [
             "src/main/java/demo/great/entity/User.java",
             "src/main/java/demo/great/entity/BillCategory.java",
@@ -58,7 +78,9 @@
         {
           "commit_id": "f6789012345678901234567890abcdef1234567",
           "message": "增加Mapper",
-          "parent_ids": ["e5f6789012345678901234567890abcdef123456"],
+          "parent_ids": [
+            "e5f6789012345678901234567890abcdef123456"
+          ],
           "files": [
             "src/main/resources/mapper/UserMapper.xml",
             "src/main/resources/mapper/BillCategoryMapper.xml",
@@ -72,7 +94,9 @@
         {
           "commit_id": "g789012345678901234567890abcdef12345678",
           "message": "增加Dao",
-          "parent_ids": ["f6789012345678901234567890abcdef1234567"],
+          "parent_ids": [
+            "f6789012345678901234567890abcdef1234567"
+          ],
           "files": [
             "src/main/java/demo/great/dao/UserDao.java",
             "src/main/java/demo/great/dao/BillCategoryDao.java",
@@ -83,21 +107,31 @@
         {
           "commit_id": "h89012345678901234567890abcdef123456789",
           "message": "Add Service for BillCategory",
-          "parent_ids": ["g789012345678901234567890abcdef12345678"],
-          "files": ["src/main/java/demo/great/service/BillCategoryService.java"],
+          "parent_ids": [
+            "g789012345678901234567890abcdef12345678"
+          ],
+          "files": [
+            "src/main/java/demo/great/service/BillCategoryService.java"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "i9012345678901234567890abcdef1234567890",
           "message": "Add Service for BillItem",
-          "parent_ids": ["h89012345678901234567890abcdef123456789"],
-          "files": ["src/main/java/demo/great/service/BillItemService.java"],
+          "parent_ids": [
+            "h89012345678901234567890abcdef123456789"
+          ],
+          "files": [
+            "src/main/java/demo/great/service/BillItemService.java"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "j012345678901234567890abcdef12345678901",
           "message": "增加配置文件",
-          "parent_ids": ["i9012345678901234567890abcdef1234567890"],
+          "parent_ids": [
+            "i9012345678901234567890abcdef1234567890"
+          ],
           "files": [
             "src/main/resources/application.properties",
             "src/main/resources/database.properties"
@@ -107,15 +141,23 @@
         {
           "commit_id": "k12345678901234567890abcdef123456789012",
           "message": "增加UserService",
-          "parent_ids": ["j012345678901234567890abcdef12345678901"],
-          "files": ["src/main/java/demo/great/service/UserService.java"],
+          "parent_ids": [
+            "j012345678901234567890abcdef12345678901"
+          ],
+          "files": [
+            "src/main/java/demo/great/service/UserService.java"
+          ],
           "deleted_files": []
         },
         {
           "commit_id": "l23456789012345678901234567890123456789",
           "message": "Add UnitTest for UserService",
-          "parent_ids": ["k12345678901234567890abcdef123456789012"],
-          "files": ["src/test/java/demo/great/service/UserServiceTest.java"],
+          "parent_ids": [
+            "k12345678901234567890abcdef123456789012"
+          ],
+          "files": [
+            "src/test/java/demo/great/service/UserServiceTest.java"
+          ],
           "deleted_files": []
         }
       ]
@@ -126,7 +168,9 @@
           "commit_id": "d9366c45986f0717662d37887db7fd98141354c0",
           "message": "Initial commit",
           "parent_ids": [],
-          "files": ["README.md"],
+          "files": [
+            "README.md"
+          ],
           "deleted_files": []
         }
       ]

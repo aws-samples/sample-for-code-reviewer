@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="demo.great.dao.mapper.BillCategoryMapper">
+    
+    <resultMap id="BaseResultMap" type="demo.great.entity.BillCategory">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="description" property="description" />
+        <result column="color" property="color" />
+        <result column="sort_order" property="sortOrder" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM bill_category WHERE id = #{id}
+    </select>
+    
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT * FROM bill_category ORDER BY sort_order ASC
+    </select>
+    
+    <insert id="insert" parameterType="demo.great.entity.BillCategory">
+        INSERT INTO bill_category (name, description, color, sort_order, create_time)
+        VALUES (#{name}, #{description}, #{color}, #{sortOrder}, NOW())
+    </insert>
+    
+</mapper>

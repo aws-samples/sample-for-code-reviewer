@@ -14,6 +14,43 @@ sys.path.insert(0, str(Path(__file__).parent))
 from mock_repository_manager import get_mock_gitlab_project
 
 
+def calculate_expected_files_at_commit(metadata, target_commit_id):
+    """
+    根据metadata.json计算指定commit时应该存在的所有文件
+    
+    参数:
+    - metadata: repository_metadata.json的内容
+    - target_commit_id: 目标commit ID
+    
+    返回:
+    - 该commit时应该存在的所有文件列表（排序后）
+    """
+    commits = metadata['branches']['main']['commits']
+    
+    # 找到目标commit的位置
+    target_index = -1
+    for i, commit in enumerate(commits):
+        if commit['commit_id'] == target_commit_id:
+            target_index = i
+            break
+    
+    if target_index == -1:
+        return None
+    
+    # 累积计算文件列表
+    all_files = set()
+    for i in range(target_index + 1):
+        commit = commits[i]
+        # 添加新增文件
+        for file_path in commit.get('files', []):
+            all_files.add(file_path)
+        # 删除被删除的文件
+        for file_path in commit.get('deleted_files', []):
+            all_files.discard(file_path)
+    
+    return sorted(list(all_files))
+
+
 def test_all_commits_with_file_content():
     """
     测试目的：完整验证Mock Data系统的所有commit和文件内容
@@ -23,25 +60,30 @@ def test_all_commits_with_file_content():
     2. 每个commit中所有文件的名称
     3. 每个文件的完整内容
     4. 文件内容的统计信息（大小、行数等）
+    5. 验证metadata.json与实际文件系统的完全一致性
     
     业务重要性：确保Mock系统能够完整模拟真实的GitLab仓库
     
     测试流程：
     1. 读取repository_metadata.json获取所有commit信息
     2. 遍历每个commit，获取其包含的文件列表
-    3. 对每个文件调用GitLab API获取内容
-    4. 展示文件内容的详细信息和统计
-    5. 验证所有文件都能正确获取
+    3. 验证API返回的文件与文件系统中的文件完全一致
+    4. 验证API返回的文件与metadata.json定义的文件完全一致
+    5. 对每个文件调用GitLab API获取内容
+    6. 展示文件内容的详细信息和统计
     
     关键验证点：
     - 所有commit都能正确访问
+    - API返回的文件列表与文件系统完全一致
+    - API返回的文件列表与metadata.json定义完全一致
     - 所有文件都能成功获取内容
     - 文件内容符合预期格式（Java代码、XML配置等）
     - 没有404错误或空内容
+    - 没有多余或缺失的文件
     
     期望结果：
     - 13个commit全部可访问
-    - 27个文件全部有内容
+    - 所有文件完全匹配metadata.json定义
     - 所有Java文件包含正确的包名和类定义
     - 所有配置文件格式正确
     """
@@ -77,68 +119,148 @@ def test_all_commits_with_file_content():
         print(f"    删除文件: {len(deleted_files)} 个")
         print()
         
-        # 获取并展示每个文件的内容
-        for j, file_path in enumerate(files, 1):
-            try:
-                # 获取文件内容
-                content = project.files.raw(file_path=file_path, ref=commit_id)
-                content_text = content.decode('utf-8')
-                
-                # 统计信息
-                file_size = len(content_text)
-                line_count = len(content_text.split('\n'))
-                total_files += 1
-                total_size += file_size
-                
-                print(f"    📄 [{j}/{len(files)}] {file_path}")
-                print(f"        大小: {file_size} bytes")
-                print(f"        行数: {line_count} 行")
-                
-                # 根据文件类型显示不同的内容预览
-                if file_path.endswith('.java'):
-                    # Java文件：显示包名和类名
-                    lines = content_text.split('\n')
-                    package_line = next((line for line in lines if line.strip().startswith('package ')), None)
-                    class_line = next((line for line in lines if 'class ' in line and ('public' in line or 'abstract' in line)), None)
+        # 获取该commit的实际文件列表（展开目录）
+        try:
+            tree = project.repository_tree(ref=commit_id)
+            actual_files = [item['path'] for item in tree]
+            
+            # 验证文件一致性：三重检查确保完全一致
+            commit_path = Path(__file__).parent / "mock_java_project" / "main" / commit_id
+            
+            # 1. 根据metadata.json计算期望的文件列表
+            expected_files = calculate_expected_files_at_commit(metadata, commit_id)
+            expected_files_set = set(expected_files) if expected_files else set()
+            
+            # 2. 获取实际文件系统中的文件
+            filesystem_files = []
+            if commit_path.exists():
+                for item in commit_path.rglob('*'):
+                    if item.is_file():
+                        relative_path = item.relative_to(commit_path)
+                        filesystem_files.append(str(relative_path))
+            filesystem_files.sort()
+            filesystem_files_set = set(filesystem_files)
+            
+            # 3. API返回的文件列表
+            actual_files_set = set(actual_files)
+            
+            # 进行三重比较
+            consistency_issues = []
+            
+            # 比较metadata.json与API返回
+            metadata_vs_api_missing = expected_files_set - actual_files_set
+            metadata_vs_api_extra = actual_files_set - expected_files_set
+            
+            if metadata_vs_api_missing:
+                consistency_issues.append(f"metadata.json定义但API未返回: {sorted(metadata_vs_api_missing)}")
+            if metadata_vs_api_extra:
+                consistency_issues.append(f"API返回但metadata.json未定义: {sorted(metadata_vs_api_extra)}")
+            
+            # 比较文件系统与API返回
+            filesystem_vs_api_missing = filesystem_files_set - actual_files_set
+            filesystem_vs_api_extra = actual_files_set - filesystem_files_set
+            
+            if filesystem_vs_api_missing:
+                consistency_issues.append(f"文件系统存在但API未返回: {sorted(filesystem_vs_api_missing)}")
+            if filesystem_vs_api_extra:
+                consistency_issues.append(f"API返回但文件系统不存在: {sorted(filesystem_vs_api_extra)}")
+            
+            # 比较metadata.json与文件系统
+            metadata_vs_filesystem_missing = expected_files_set - filesystem_files_set
+            metadata_vs_filesystem_extra = filesystem_files_set - expected_files_set
+            
+            if metadata_vs_filesystem_missing:
+                consistency_issues.append(f"metadata.json定义但文件系统缺失: {sorted(metadata_vs_filesystem_missing)}")
+            if metadata_vs_filesystem_extra:
+                consistency_issues.append(f"文件系统存在但metadata.json未定义: {sorted(metadata_vs_filesystem_extra)}")
+            
+            # 输出检查结果
+            if consistency_issues:
+                print(f"    ❌ 文件一致性检查失败:")
+                for issue in consistency_issues:
+                    print(f"        {issue}")
+            else:
+                print(f"    ✅ 文件一致性检查通过: metadata.json、API返回、文件系统三者完全匹配")
+                print(f"        期望文件数: {len(expected_files_set)}")
+                print(f"        API返回数: {len(actual_files_set)}")
+                print(f"        文件系统数: {len(filesystem_files_set)}")
+            
+            # 计算这个commit新增的文件（与上一个commit比较）
+            if i == 1:
+                new_files_in_commit = actual_files
+            else:
+                prev_commit_id = commits[i-2]['commit_id']
+                prev_tree = project.repository_tree(ref=prev_commit_id)
+                prev_files = [item['path'] for item in prev_tree]
+                new_files_in_commit = [f for f in actual_files if f not in prev_files]
+            
+            print(f"    实际新增文件: {len(new_files_in_commit)} 个")
+            
+            # 获取并展示每个新增文件的内容
+            for j, file_path in enumerate(new_files_in_commit, 1):
+                try:
+                    # 获取文件内容
+                    content = project.files.raw(file_path=file_path, ref=commit_id)
+                    content_text = content.decode('utf-8')
                     
-                    if package_line:
-                        print(f"        包名: {package_line.strip()}")
-                    if class_line:
-                        print(f"        类定义: {class_line.strip()}")
-                
-                elif file_path.endswith('.xml'):
-                    # XML文件：显示根元素
-                    lines = content_text.split('\n')
-                    root_line = next((line for line in lines if '<mapper' in line or '<project' in line), None)
-                    if root_line:
-                        print(f"        根元素: {root_line.strip()}")
-                
-                elif file_path.endswith('.properties'):
-                    # Properties文件：显示配置项数量
-                    config_lines = [line for line in content_text.split('\n') if '=' in line and not line.strip().startswith('#')]
-                    print(f"        配置项: {len(config_lines)} 个")
-                
-                elif file_path.endswith('.yaml'):
-                    # YAML文件：显示主要配置
-                    lines = content_text.split('\n')
-                    key_lines = [line for line in lines[:5] if ':' in line and not line.strip().startswith('#')]
-                    print(f"        主要配置: {', '.join([line.split(':')[0].strip() for line in key_lines])}")
-                
-                # 显示内容预览（前3行）
-                preview_lines = content_text.split('\n')[:3]
-                print(f"        内容预览:")
-                for k, line in enumerate(preview_lines, 1):
-                    print(f"          {k}: {line}")
-                
-                if line_count > 3:
-                    print(f"          ... (还有 {line_count - 3} 行)")
-                
-                print()
-                
-            except Exception as e:
-                print(f"    ❌ 错误: 无法获取 {file_path}")
-                print(f"        异常: {e}")
-                print()
+                    # 统计信息
+                    file_size = len(content_text)
+                    line_count = len(content_text.split('\n'))
+                    total_files += 1
+                    total_size += file_size
+                    
+                    print(f"    📄 [{j}/{len(new_files_in_commit)}] {file_path}")
+                    print(f"        大小: {file_size} bytes")
+                    print(f"        行数: {line_count} 行")
+                    
+                    # 根据文件类型显示不同的内容预览
+                    if file_path.endswith('.java'):
+                        # Java文件：显示包名和类名
+                        lines = content_text.split('\n')
+                        package_line = next((line for line in lines if line.strip().startswith('package ')), None)
+                        class_line = next((line for line in lines if 'class ' in line and ('public' in line or 'abstract' in line)), None)
+                        
+                        if package_line:
+                            print(f"        包名: {package_line.strip()}")
+                        if class_line:
+                            print(f"        类定义: {class_line.strip()}")
+                    
+                    elif file_path.endswith('.xml'):
+                        # XML文件：显示根元素
+                        lines = content_text.split('\n')
+                        root_line = next((line for line in lines if '<mapper' in line or '<project' in line), None)
+                        if root_line:
+                            print(f"        根元素: {root_line.strip()}")
+                    
+                    elif file_path.endswith('.properties'):
+                        # Properties文件：显示配置项数量
+                        config_lines = [line for line in content_text.split('\n') if '=' in line and not line.strip().startswith('#')]
+                        print(f"        配置项: {len(config_lines)} 个")
+                    
+                    elif file_path.endswith('.yaml'):
+                        # YAML文件：显示主要配置
+                        lines = content_text.split('\n')
+                        key_lines = [line for line in lines[:5] if ':' in line and not line.strip().startswith('#')]
+                        print(f"        主要配置: {', '.join([line.split(':')[0].strip() for line in key_lines])}")
+                    
+                    # 显示内容预览（前3行）
+                    preview_lines = content_text.split('\n')[:3]
+                    print(f"        内容预览:")
+                    for k, line in enumerate(preview_lines, 1):
+                        print(f"          {k}: {line}")
+                    
+                    if line_count > 3:
+                        print(f"          ... (还有 {line_count - 3} 行)")
+                    
+                    print()
+                    
+                except Exception as e:
+                    print(f"    ❌ 错误: 无法获取 {file_path}")
+                    print(f"        异常: {e}")
+                    print()
+        except Exception as e:
+            print(f"    ❌ 无法获取commit {commit_id[:8]} 的文件树: {e}")
+            print()
         
         # 如果有删除的文件，也显示出来
         if deleted_files:
@@ -301,6 +423,12 @@ def test_diff_functionality():
             "name": "添加基础架构",
             "from": "b2c3d4e5f6789012345678901234567890abcdef",
             "to": "c3d4e5f6789012345678901234567890abcdef12",
+            "expected_files": 4
+        },
+        {
+            "name": "添加代码评审规则",
+            "from": "c3d4e5f6789012345678901234567890abcdef12",
+            "to": "d4e5f6789012345678901234567890abcdef1234",
             "expected_files": 4
         },
         {
