@@ -124,55 +124,50 @@ def test_all_commits_with_file_content():
             tree = project.repository_tree(ref=commit_id)
             actual_files = [item['path'] for item in tree]
             
-            # 验证文件一致性：三重检查确保完全一致
-            commit_path = Path(__file__).parent / "mock_java_project" / "main" / commit_id
+            # 验证文件一致性：检查API返回与metadata.json动态计算的一致性
+            # 注意：根据Mock Data设计原则，每个commit目录只存储该commit的变更文件
+            # MockRepositoryManager会动态计算完整的文件列表
             
-            # 1. 根据metadata.json计算期望的文件列表
+            # 1. 根据metadata.json计算期望的文件列表（动态累积）
             expected_files = calculate_expected_files_at_commit(metadata, commit_id)
             expected_files_set = set(expected_files) if expected_files else set()
             
-            # 2. 获取实际文件系统中的文件
-            filesystem_files = []
+            # 2. API返回的文件列表（应该与动态计算结果一致）
+            actual_files_set = set(actual_files)
+            
+            # 3. 获取当前commit目录中的文件（只包含该commit的变更文件）
+            commit_path = Path(__file__).parent / "mock_java_project" / "main" / commit_id
+            commit_change_files = []
             if commit_path.exists():
                 for item in commit_path.rglob('*'):
                     if item.is_file():
                         relative_path = item.relative_to(commit_path)
-                        filesystem_files.append(str(relative_path))
-            filesystem_files.sort()
-            filesystem_files_set = set(filesystem_files)
+                        commit_change_files.append(str(relative_path))
+            commit_change_files_set = set(commit_change_files)
             
-            # 3. API返回的文件列表
-            actual_files_set = set(actual_files)
+            # 4. 获取该commit在metadata.json中定义的变更文件
+            current_commit_files = set(commit.get('files', []))
             
-            # 进行三重比较
+            # 进行一致性检查
             consistency_issues = []
             
-            # 比较metadata.json与API返回
+            # 检查API返回与动态计算的一致性
             metadata_vs_api_missing = expected_files_set - actual_files_set
             metadata_vs_api_extra = actual_files_set - expected_files_set
             
             if metadata_vs_api_missing:
-                consistency_issues.append(f"metadata.json定义但API未返回: {sorted(metadata_vs_api_missing)}")
+                consistency_issues.append(f"动态计算期望但API未返回: {sorted(metadata_vs_api_missing)}")
             if metadata_vs_api_extra:
-                consistency_issues.append(f"API返回但metadata.json未定义: {sorted(metadata_vs_api_extra)}")
+                consistency_issues.append(f"API返回但动态计算未期望: {sorted(metadata_vs_api_extra)}")
             
-            # 比较文件系统与API返回
-            filesystem_vs_api_missing = filesystem_files_set - actual_files_set
-            filesystem_vs_api_extra = actual_files_set - filesystem_files_set
+            # 检查当前commit的变更文件是否与metadata.json一致
+            metadata_vs_changes_missing = current_commit_files - commit_change_files_set
+            metadata_vs_changes_extra = commit_change_files_set - current_commit_files
             
-            if filesystem_vs_api_missing:
-                consistency_issues.append(f"文件系统存在但API未返回: {sorted(filesystem_vs_api_missing)}")
-            if filesystem_vs_api_extra:
-                consistency_issues.append(f"API返回但文件系统不存在: {sorted(filesystem_vs_api_extra)}")
-            
-            # 比较metadata.json与文件系统
-            metadata_vs_filesystem_missing = expected_files_set - filesystem_files_set
-            metadata_vs_filesystem_extra = filesystem_files_set - expected_files_set
-            
-            if metadata_vs_filesystem_missing:
-                consistency_issues.append(f"metadata.json定义但文件系统缺失: {sorted(metadata_vs_filesystem_missing)}")
-            if metadata_vs_filesystem_extra:
-                consistency_issues.append(f"文件系统存在但metadata.json未定义: {sorted(metadata_vs_filesystem_extra)}")
+            if metadata_vs_changes_missing:
+                consistency_issues.append(f"metadata.json定义但commit目录缺失: {sorted(metadata_vs_changes_missing)}")
+            if metadata_vs_changes_extra:
+                consistency_issues.append(f"commit目录存在但metadata.json未定义: {sorted(metadata_vs_changes_extra)}")
             
             # 输出检查结果
             if consistency_issues:
@@ -180,10 +175,10 @@ def test_all_commits_with_file_content():
                 for issue in consistency_issues:
                     print(f"        {issue}")
             else:
-                print(f"    ✅ 文件一致性检查通过: metadata.json、API返回、文件系统三者完全匹配")
-                print(f"        期望文件数: {len(expected_files_set)}")
-                print(f"        API返回数: {len(actual_files_set)}")
-                print(f"        文件系统数: {len(filesystem_files_set)}")
+                print(f"    ✅ 文件一致性检查通过: API返回与动态计算完全匹配")
+                print(f"        动态计算文件数: {len(expected_files_set)}")
+                print(f"        API返回文件数: {len(actual_files_set)}")
+                print(f"        当前commit变更文件数: {len(commit_change_files_set)}")
             
             # 计算这个commit新增的文件（与上一个commit比较）
             if i == 1:

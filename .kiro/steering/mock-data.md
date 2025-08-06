@@ -26,6 +26,30 @@ Mock Data系统用于在测试中模拟GitLab API调用，避免对真实GitLab�
   - `create_simple_mock_project()` - 创建简化的Mock对象
   - `patch_gitlab_project()` - 创建patch装饰器
 
+## 核心设计原则
+
+### ⚠️ 重要：Mock Data存储原则
+
+**metadata.json中的files字段**：
+- 只记录该commit**新增或修改**的文件
+- 不记录从之前commit继承的文件
+
+**mock_data目录中的commit目录**：
+- 只存储该commit**实际变更**的文件
+- 不存储从之前commit继承的文件
+- 通过MockRepositoryManager动态计算完整的文件列表
+
+**示例**：
+- Commit A添加了`file1.txt`，则A目录包含`file1.txt`
+- Commit B添加了`file2.txt`，则B目录只包含`file2.txt`（不包含`file1.txt`）
+- 当API查询Commit B的文件列表时，MockRepositoryManager会动态计算返回`[file1.txt, file2.txt]`
+
+**优势**：
+- 避免文件重复存储
+- 减少存储空间
+- 符合Git的增量存储原理
+- 便于维护和更新
+
 ## 数据结构
 
 ### 仓库元数据
