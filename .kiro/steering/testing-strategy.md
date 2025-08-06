@@ -26,9 +26,197 @@
 
 ## Mock系统设计
 
-### GitLab API Mock策略
+### Mock策略总则
 
-使用unittest.mock.patch直接Mock gitlab_code.py中的函数，基于函数参数返回预设的仿真数据。不需要启动HTTP服务器，只需要在测试时替换函数实现。
+**黄金法则**：只Mock真正不可控的外部依赖，让业务逻辑真实执行。
+
+**允许Mock的对象**：
+- **GitLab Project对象**：通过python-gitlab库访问的GitLab API调用
+- **未来扩展**：GitHub、CodeCommit等其他代码仓库的API对象
+
+**禁止Mock的对象**：
+- **AWS服务**：DynamoDB、SQS、SNS、Lambda、S3等必须使用真实的测试环境资源
+- **业务逻辑模块**：codelib.py、base.py等自定义模块的函数
+- **数据处理逻辑**：JSON解析、字符串处理、文件过滤等核心逻辑
+
+### GitLab Project对象Mock策略
+
+基于对`gitlab_code.py`的分析，需要Mock的GitLab Project对象及其方法：
+
+#### 1. repository_compare() - 获取提交差异
+**调用位置**：`get_diff_files()`
+**Mock对象**：`project.repository_compare(from_commit_id, to_commit_id)`
+**返回结构**：
+```python
+{
+    'diffs': [
+        {
+            'new_file': bool,
+            'renamed_file': bool, 
+            'deleted_file': bool,
+            'old_path': str,
+            'new_path': str,
+            'diff': str  # 实际的diff内容
+        }
+    ]
+}
+```
+
+#### 2. files.raw() - 获取文件原始内容
+**调用位置**：`get_gitlab_file()`, `get_gitlab_file_content()`
+**Mock对象**：`project.files.raw(file_path=path, ref=ref)`
+**返回结构**：`bytes` (需要.decode()转换为字符串)
+**Mock策略**：根据file_path和ref返回对应的文件内容
+
+#### 3. repository_tree() - 获取仓库文件树
+**调用位置**：`get_rules()`, `get_project_code_text()`
+**Mock对象**：`project.repository_tree(path=folder, ref=ref, recursive=True)`
+**返回结构**：
+```python
+[
+    {
+        'name': str,      # 文件名
+        'path': str,      # 完整路径
+        'type': str,      # 'blob' 或 'tree'
+        'id': str,        # Git对象ID
+        'mode': str       # 文件权限
+    }
+]
+```
+
+#### 4. files.get() - 获取文件对象
+**调用位置**：`put_rule()`
+**Mock对象**：`project.files.get(file_path=filepath, ref=branch)`
+**返回结构**：文件对象，包含content属性和save()方法
+**异常处理**：404错误表示文件不存在
+
+#### 5. files.create() - 创建新文件
+**调用位置**：`put_rule()`
+**Mock对象**：`project.files.create({...})`
+**参数结构**：
+```python
+{
+    'file_path': str,
+    'branch': str,
+    'content': str,
+    'commit_message': str
+}
+```
+
+#### 6. branches.get() - 获取分支信息
+**调用位置**：`get_last_commit_id()`
+**Mock对象**：`project.branches.get(branch)`
+**返回结构**：
+```python
+{
+    'commit': {
+        'id': str  # 最新提交ID
+    }
+}
+```
+
+#### 7. commits.list() - 获取提交列表
+**调用位置**：`get_first_commit_id()`
+**Mock对象**：`project.commits.list(ref_name=branch, all=True, order_by='created_date', sort='desc')`
+**返回结构**：
+```python
+[
+    {
+        'id': str,
+        'parent_ids': list  # 父提交ID列表，空列表表示首次提交
+    }
+]
+```
+
+### Mock实现策略
+
+#### 1. 使用unittest.mock.Mock创建Project对象
+```python
+from unittest.mock import Mock, MagicMock
+
+# 创建mock project对象
+mock_project = Mock()
+
+# 配置各个方法的返回值
+mock_project.repository_compare.return_value = {...}
+mock_project.files.raw.return_value = b"file content"
+mock_project.repository_tree.return_value = [...]
+```
+
+#### 2. 基于参数的动态返回值
+```python
+def mock_files_raw(file_path, ref):
+    # 根据文件路径和ref返回对应内容
+    if file_path == 'src/app.py' and ref == 'commit_123':
+        return b"python code content"
+    elif file_path == '.codereview/rules.yaml':
+        return b"yaml content"
+    else:
+        raise GitlabGetError("File not found", response_code=404)
+
+mock_project.files.raw.side_effect = mock_files_raw
+```
+
+#### 3. 异常情况Mock
+```python
+from gitlab.exceptions import GitlabGetError, GitlabAuthenticationError
+
+# Mock 404错误
+def mock_get_nonexistent_file(file_path, ref):
+    raise GitlabGetError("Not found", response_code=404)
+
+# Mock 认证错误  
+def mock_auth_error():
+    raise GitlabAuthenticationError("Invalid token")
+```
+
+#### 4. 仿真数据管理
+使用`test/mock_data/repositories/`目录存储仿真仓库数据：
+- 每个仓库一个子目录
+- 按commit_id组织文件版本
+- 支持动态生成diff内容
+- 维护分支和提交的关系
+
+### Mock验证原则
+
+#### 1. 参数验证
+验证Mock方法被调用时的参数是否正确：
+```python
+mock_project.files.raw.assert_called_with(
+    file_path='src/app.py', 
+    ref='commit_123'
+)
+```
+
+#### 2. 调用次数验证
+验证API调用的频率是否符合预期：
+```python
+assert mock_project.repository_tree.call_count == 1
+```
+
+#### 3. 调用顺序验证
+对于有依赖关系的API调用，验证调用顺序：
+```python
+expected_calls = [
+    call.repository_tree(ref='main', all=True, recursive=True),
+    call.files.raw(file_path='src/app.py', ref='main')
+]
+mock_project.assert_has_calls(expected_calls)
+```
+
+### Mock数据一致性
+
+#### 1. 版本一致性
+确保同一commit_id下的所有文件内容保持一致
+
+#### 2. 分支一致性  
+确保分支的最新提交与文件内容匹配
+
+#### 3. 差异一致性
+确保repository_compare返回的diff与实际文件内容变化一致
+
+#### 4. 异常一致性
+确保异常情况的Mock与真实GitLab API行为一致
 
 ### 动态Diff生成的仿真仓库
 
@@ -86,14 +274,14 @@ test/mock_data/
 - 通过真实服务验证集成效果
 
 **单元测试策略**：
-- **GitLab API**：使用Mock，避免依赖外部服务
+- **GitLab Project对象**：Mock project.repository_compare、project.files.raw等API调用，避免依赖外部服务
 - **DynamoDB**：使用真实的测试环境DynamoDB表，通过直接读取数据验证写入结果
 - **Lambda调用**：使用真实的Lambda异步调用，验证实际的触发和执行效果
 - **SQS/SNS**：使用真实服务，验证消息传递的完整性
 - **Bedrock**：使用真实服务进行AI模型调用测试
 
 **集成测试策略**：
-- **GitLab API**：继续使用Mock（避免依赖真实仓库）
+- **GitLab Project对象**：继续Mock project相关API调用（避免依赖真实仓库）
 - **AWS服务**：全部使用真实资源进行端到端验证
 - **数据验证**：通过直接查询数据库、队列状态等方式验证业务逻辑
 
@@ -110,7 +298,7 @@ test/mock_data/
 **黄金法则**：在做任何Mock之前，先回答"这个步骤不Mock不行吗？"
 
 **Mock层级策略**：
-- **只Mock最底层的不可控外部依赖**：如GitLab API调用（`gitlab.Gitlab()`）
+- **只Mock最底层的不可控外部依赖**：如GitLab Project对象的API调用（`project.repository_compare()`、`project.files.raw()`等）
 - **让业务逻辑层真实执行**：如参数解析、数据处理、状态管理
 - **使用真实的AWS服务**：DynamoDB、Lambda、SQS、SNS等用于验证实际效果
 
@@ -120,7 +308,7 @@ test/mock_data/
 - ❌ 过度简化输入数据
 
 **正确的Mock方式**：
-- ✅ 只Mock `gitlab.Gitlab()` 等真正的外部API调用
+- ✅ 只Mock GitLab Project对象的API方法（`project.repository_compare()`、`project.files.raw()`等）
 - ✅ 构造丰富的真实输入数据
 - ✅ 让业务逻辑真实执行，发现真实问题
 
@@ -253,10 +441,52 @@ test/mock_data/
 ## 测试最佳实践
 
 ### 命名约定
-测试文件使用`test_<module_name>.py`格式，测试类使用`Test<ClassName>`，测试方法使用`test_<specific_behavior>()`。
+- **测试文件**：使用`test_<module_name>.py`格式
+- **测试设计文档**：使用`test_<module_name>.md`格式，与对应的测试文件同名
+- **测试类**：使用`Test<ClassName>`格式
+- **测试方法**：使用`test_<specific_behavior>()`格式
 
 ### 组织原则
 每个Lambda函数对应一个测试文件，按功能分组测试方法，使用setup/teardown管理测试状态。
+
+### 测试文档规范
+
+**测试设计文档要求**：
+- 每个测试用例Python文件（如`test_module.py`）必须配套一个测试设计文档（如`test_module.md`）
+- 测试设计文档用于详细阐述测试思路、策略和设计考虑
+- 测试Python文件中只保留简洁的测试目标说明，详细设计思路写在对应的md文档中
+
+**测试设计文档结构**：
+```markdown
+# test_module.py 测试用例设计文档
+
+## 模块概述
+- 被测试模块的作用和业务重要性
+
+## 业务流程分析
+- 主要业务步骤和关键逻辑分析
+
+## 测试用例设计
+### 1. 测试用例名称 (test_function_name)
+#### 测试目标
+#### 测试场景
+#### 测试流程
+#### 关键验证点
+#### 期望结果
+
+## 测试策略
+- Mock策略
+- 验证方法
+- 测试数据管理
+
+## 业务价值
+- 测试的重要性和价值说明
+```
+
+**文档管理原则**：
+- 测试设计文档与测试代码同步维护
+- 设计文档作为测试实现的指导和评审依据
+- 通过设计文档确保测试覆盖的完整性和合理性
 
 ### 测试注释规范
 
