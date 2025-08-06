@@ -1,5 +1,6 @@
 branch: "main"
 mode: "diff"
+event: "push"
 target: "src/**"
 system: |
   你是一个专业的Java代码简化专家。请仔细检查代码的以下方面：

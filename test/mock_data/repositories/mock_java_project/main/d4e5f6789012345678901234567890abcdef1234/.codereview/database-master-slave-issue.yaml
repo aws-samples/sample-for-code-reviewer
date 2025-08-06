@@ -1,5 +1,6 @@
 branch: "main"
 mode: "diff"
+event: "merge"
 target: "src/**"
 system: |
   你是一个专业的数据库架构专家。请仔细检查代码中的数据库相关问题：
