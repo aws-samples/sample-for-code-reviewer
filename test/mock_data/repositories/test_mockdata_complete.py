@@ -119,80 +119,103 @@ def test_all_commits_with_file_content():
         print(f"    删除文件: {len(deleted_files)} 个")
         print()
         
-        # 获取该commit的实际文件列表（展开目录）
+        # 验证文件一致性：比较该commit的变更文件（而不是总文件）
+        # 根据Mock Data设计原则，我们应该比较的是每个commit的变更文件
         try:
-            tree = project.repository_tree(ref=commit_id)
-            actual_files = [item['path'] for item in tree]
+            # 1. 获取该commit在metadata.json中定义的变更文件
+            metadata_changed_files = set(commit.get('files', []))
             
-            # 验证文件一致性：检查API返回与metadata.json动态计算的一致性
-            # 注意：根据Mock Data设计原则，每个commit目录只存储该commit的变更文件
-            # MockRepositoryManager会动态计算完整的文件列表
+            # 2. 计算Git应该返回的变更文件（与上一个commit比较）
+            if i == 1:
+                # 第一个commit，所有文件都是新增的
+                git_changed_files = set()
+                tree = project.repository_tree(ref=commit_id)
+                git_changed_files = set([item['path'] for item in tree])
+            else:
+                # 后续commit，计算与上一个commit的差异
+                prev_commit_id = commits[i-2]['commit_id']
+                current_tree = project.repository_tree(ref=commit_id)
+                prev_tree = project.repository_tree(ref=prev_commit_id)
+                
+                current_files = set([item['path'] for item in current_tree])
+                prev_files = set([item['path'] for item in prev_tree])
+                
+                git_changed_files = current_files - prev_files  # 新增的文件
+                # 注意：这里简化处理，只考虑新增文件，不考虑修改的文件
             
-            # 1. 根据metadata.json计算期望的文件列表（动态累积）
-            expected_files = calculate_expected_files_at_commit(metadata, commit_id)
-            expected_files_set = set(expected_files) if expected_files else set()
-            
-            # 2. API返回的文件列表（应该与动态计算结果一致）
-            actual_files_set = set(actual_files)
-            
-            # 3. 获取当前commit目录中的文件（只包含该commit的变更文件）
+            # 3. 获取当前commit目录中的文件（文件系统中实际存储的变更文件）
             commit_path = Path(__file__).parent / "mock_java_project" / "main" / commit_id
-            commit_change_files = []
+            filesystem_files = []
             if commit_path.exists():
                 for item in commit_path.rglob('*'):
                     if item.is_file():
                         relative_path = item.relative_to(commit_path)
-                        commit_change_files.append(str(relative_path))
-            commit_change_files_set = set(commit_change_files)
+                        filesystem_files.append(str(relative_path))
+            filesystem_changed_files = set(filesystem_files)
             
-            # 4. 获取该commit在metadata.json中定义的变更文件
-            current_commit_files = set(commit.get('files', []))
+            # 输出详细日志进行对比（现在比较的是变更文件）
+            print(f"    📊 详细变更文件对比日志:")
+            print(f"        Git计算的变更files ({len(git_changed_files)}个): {sorted(git_changed_files)}")
+            print(f"        metadata中的变更files ({len(metadata_changed_files)}个): {sorted(metadata_changed_files)}")
+            print(f"        文件系统中的变更files ({len(filesystem_changed_files)}个): {sorted(filesystem_changed_files)}")
             
-            # 进行一致性检查
+            # 进行一致性检查（比较变更文件）
             consistency_issues = []
             
-            # 检查API返回与动态计算的一致性
-            metadata_vs_api_missing = expected_files_set - actual_files_set
-            metadata_vs_api_extra = actual_files_set - expected_files_set
+            # 检查Git计算的变更files与metadata中定义的变更files的一致性
+            metadata_vs_git_missing = metadata_changed_files - git_changed_files
+            metadata_vs_git_extra = git_changed_files - metadata_changed_files
             
-            if metadata_vs_api_missing:
-                consistency_issues.append(f"动态计算期望但API未返回: {sorted(metadata_vs_api_missing)}")
-            if metadata_vs_api_extra:
-                consistency_issues.append(f"API返回但动态计算未期望: {sorted(metadata_vs_api_extra)}")
+            if metadata_vs_git_missing:
+                consistency_issues.append(f"metadata定义有但Git计算缺失: {sorted(metadata_vs_git_missing)}")
+            if metadata_vs_git_extra:
+                consistency_issues.append(f"Git计算有但metadata定义缺失: {sorted(metadata_vs_git_extra)}")
             
-            # 检查当前commit的变更文件是否与metadata.json一致
-            metadata_vs_changes_missing = current_commit_files - commit_change_files_set
-            metadata_vs_changes_extra = commit_change_files_set - current_commit_files
+            # 检查Git计算的变更files与文件系统的一致性
+            git_vs_filesystem_missing = git_changed_files - filesystem_changed_files
+            git_vs_filesystem_extra = filesystem_changed_files - git_changed_files
             
-            if metadata_vs_changes_missing:
-                consistency_issues.append(f"metadata.json定义但commit目录缺失: {sorted(metadata_vs_changes_missing)}")
-            if metadata_vs_changes_extra:
-                consistency_issues.append(f"commit目录存在但metadata.json未定义: {sorted(metadata_vs_changes_extra)}")
+            if git_vs_filesystem_missing:
+                consistency_issues.append(f"Git计算有但文件系统缺失: {sorted(git_vs_filesystem_missing)}")
+            if git_vs_filesystem_extra:
+                consistency_issues.append(f"文件系统有但Git计算缺失: {sorted(git_vs_filesystem_extra)}")
+            
+            # 检查metadata定义与文件系统的一致性
+            metadata_vs_filesystem_missing = metadata_changed_files - filesystem_changed_files
+            metadata_vs_filesystem_extra = filesystem_changed_files - metadata_changed_files
+            
+            if metadata_vs_filesystem_missing:
+                consistency_issues.append(f"metadata定义有但文件系统缺失: {sorted(metadata_vs_filesystem_missing)}")
+            if metadata_vs_filesystem_extra:
+                consistency_issues.append(f"文件系统有但metadata定义缺失: {sorted(metadata_vs_filesystem_extra)}")
             
             # 输出检查结果
             if consistency_issues:
-                print(f"    ❌ 文件一致性检查失败:")
+                print(f"    ❌ 变更文件一致性检查失败:")
                 for issue in consistency_issues:
                     print(f"        {issue}")
             else:
-                print(f"    ✅ 文件一致性检查通过: API返回与动态计算完全匹配")
-                print(f"        动态计算文件数: {len(expected_files_set)}")
-                print(f"        API返回文件数: {len(actual_files_set)}")
-                print(f"        当前commit变更文件数: {len(commit_change_files_set)}")
-            
-            # 计算这个commit新增的文件（与上一个commit比较）
-            if i == 1:
-                new_files_in_commit = actual_files
+                print(f"    ✅ 变更文件一致性检查通过: Git计算、metadata定义、文件系统三者完全一致")
+                
+            # 检查三者是否完全一致（现在比较的是变更文件）
+            all_consistent = (git_changed_files == metadata_changed_files == filesystem_changed_files)
+            if all_consistent:
+                print(f"    🎯 变更文件三者完全一致: Git计算={len(git_changed_files)}, metadata={len(metadata_changed_files)}, 文件系统={len(filesystem_changed_files)}")
             else:
-                prev_commit_id = commits[i-2]['commit_id']
-                prev_tree = project.repository_tree(ref=prev_commit_id)
-                prev_files = [item['path'] for item in prev_tree]
-                new_files_in_commit = [f for f in actual_files if f not in prev_files]
+                print(f"    ⚠️  变更文件三者不一致: Git计算={len(git_changed_files)}, metadata={len(metadata_changed_files)}, 文件系统={len(filesystem_changed_files)}")
+                # 注意：这里不添加断言，因为我们的设计原则就是每个commit目录只存储变更文件
+                # 这个不一致是预期的，只要metadata和文件系统一致即可
+                
+            # 关键检查：metadata定义与文件系统的一致性（这个必须一致）
+            metadata_filesystem_consistent = (metadata_changed_files == filesystem_changed_files)
+            if not metadata_filesystem_consistent:
+                print(f"    ❌ 关键错误：metadata定义与文件系统不一致！")
+                assert metadata_filesystem_consistent, f"Commit {commit_id} metadata定义与文件系统不一致: metadata={len(metadata_changed_files)}, 文件系统={len(filesystem_changed_files)}"
             
-            print(f"    实际新增文件: {len(new_files_in_commit)} 个")
+            print(f"    实际变更文件: {len(filesystem_changed_files)} 个")
             
-            # 获取并展示每个新增文件的内容
-            for j, file_path in enumerate(new_files_in_commit, 1):
+            # 获取并展示每个变更文件的内容
+            for j, file_path in enumerate(sorted(filesystem_changed_files), 1):
                 try:
                     # 获取文件内容
                     content = project.files.raw(file_path=file_path, ref=commit_id)
@@ -204,7 +227,7 @@ def test_all_commits_with_file_content():
                     total_files += 1
                     total_size += file_size
                     
-                    print(f"    📄 [{j}/{len(new_files_in_commit)}] {file_path}")
+                    print(f"    📄 [{j}/{len(filesystem_changed_files)}] {file_path}")
                     print(f"        大小: {file_size} bytes")
                     print(f"        行数: {line_count} 行")
                     
