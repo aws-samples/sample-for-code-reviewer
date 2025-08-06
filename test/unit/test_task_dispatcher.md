@@ -50,32 +50,135 @@
 - 有效事件返回True
 - 无效事件抛出包含具体错误信息的异常
 
-### 2. 规则加载测试 (test_load_rules)
+### 2. 规则加载测试（已拆分为5个独立测试用例）
 
-#### 测试目标
-验证评审规则的正确加载，包括webtool和webhook两种触发方式的规则构造。
+规则加载是任务分发的核心功能，我们将其拆分为5个专注的测试用例，每个测试用例覆盖特定的场景和触发方式组合。
 
-#### 测试场景
-- **Webtool触发**：通过Web界面手动触发的评审请求
-- **Webhook触发**：通过仓库事件自动触发的评审请求
-- **多规则仓库**：包含多个.codereview文件的仓库
-- **空规则仓库**：没有评审规则的仓库
+#### 2.1 Webtool Push事件规则构造 (test_load_rules_webtool_push)
 
-#### 测试流程
-1. Mock GitLab Project对象，让其repository_tree和files.raw方法返回预设的规则文件数据
-2. 构造webtool和webhook两种类型的事件
-3. 调用load_rules函数（内部会调用codelib.get_rules，该函数真实执行）
-4. 验证返回的规则数据结构和内容
+##### 测试目标
+验证用户通过Web界面手动触发Push类型代码评审时的规则构造逻辑。
 
-#### 关键验证点
-- Webtool规则的正确构造
-- Webhook规则的正确加载
-- 规则字段的完整性
-- 异常情况的处理
+##### 测试场景
+用户在Web界面选择Push事件类型，手动配置评审参数并触发评审。
 
-#### 期望结果
-- Webtool模式返回单个构造的规则
-- Webhook模式返回从仓库加载的规则列表
+##### 测试流程
+1. 使用真实的mock仓库数据（mock_java_project）
+2. 构造包含完整字段的Webtool Push事件
+3. 调用load_rules函数进行规则构造
+4. 验证构造的规则包含所有必要字段且值正确
+
+##### 关键验证点
+- 规则字段的完整性（name, mode, model, event, branch, target, confirm等）
+- 提示词的正确映射（webtool_prompt_system → prompt_system）
+- 事件类型的正确转换（event_type → event）
+
+##### 期望结果
+返回单个构造的规则，所有字段值与输入事件匹配。
+
+#### 2.2 Webtool Merge事件规则构造 (test_load_rules_webtool_merge)
+
+##### 测试目标
+验证用户通过Web界面手动触发Merge类型代码评审时的规则构造逻辑，重点测试系统的设计限制。
+
+##### 测试场景
+用户在Web界面选择Merge Request事件类型，尝试使用自定义字段配置评审参数。
+
+##### 测试流程
+1. 构造包含大量自定义字段的Webtool Merge事件
+2. 调用load_rules函数进行规则构造
+3. 验证当前系统支持的标准字段
+4. 确认自定义字段不会被传递（设计限制）
+
+##### 关键验证点
+- 标准字段的正确处理（10个固定字段）
+- 自定义字段传递限制的验证
+- 系统设计边界的明确识别
+
+##### 期望结果
+- 返回包含10个标准字段的规则
+- 自定义字段不会出现在最终规则中
+- 测试明确标识这是当前的设计限制
+
+#### 2.3 Webhook Push事件规则加载 (test_load_rules_webhook_push)
+
+##### 测试目标
+验证GitLab Push事件触发自动代码评审时从真实mockdata加载规则的逻辑。
+
+##### 测试场景
+GitLab仓库发生Push事件，系统自动从仓库的.codereview目录加载评审规则。
+
+##### 测试流程
+1. 使用真实的mock_java_project数据
+2. 构造Webhook Push事件
+3. 调用load_rules函数从mockdata加载规则
+4. 验证加载的规则内容与code-simplification.yaml匹配
+
+##### 关键验证点
+- 真实.codereview.yaml文件的正确加载
+- 规则内容与实际文件的一致性
+- Push事件类型的规则筛选
+
+##### 期望结果
+- 成功加载真实的代码简化专家规则
+- 规则内容符合预期格式和要求
+
+#### 2.4 Webhook Merge事件规则加载 (test_load_rules_webhook_merge)
+
+##### 测试目标
+验证GitLab Merge Request事件触发自动代码评审时的规则加载，重点验证复杂自定义字段的处理。
+
+##### 测试场景
+GitLab仓库发生Merge Request事件，系统加载包含复杂自定义字段的database-master-slave-issue.yaml规则。
+
+##### 测试流程
+1. 使用真实的mock_java_project数据
+2. 构造Webhook Merge事件
+3. 调用load_rules函数加载规则
+4. 深度验证database-master-slave-issue.yaml的13个自定义字段
+
+##### 关键验证点
+- **基础字段验证**：name, branch, mode, target, model, event, confirm
+- **字段顺序验证**：order字段的正确解析
+- **复杂多行字段验证**：
+  - `system` - 系统提示词
+  - `business` - 业务描述
+  - `design` - 设计要求（包含用户、账务类别、账户明细等对象）
+  - `web_design` - Web工程要求（SpringBoot、MyBatis等）
+  - `sql` - 完整的SQL脚本
+  - `requirement` - 核心业务需求（主从数据库要求）
+  - `task` - 任务描述
+  - `output` - 复杂的输出格式要求（JSON格式、标签要求等）
+  - `other` - 其他要求
+  - `response` - 响应要求
+
+##### 期望结果
+- 成功加载包含13个自定义字段的复杂规则
+- 所有字段内容与实际YAML文件完全匹配
+- 验证系统对复杂配置的完整支持能力
+
+#### 2.5 默认行为测试 (test_load_rules_default_behavior)
+
+##### 测试目标
+验证事件数据缺失invoker字段时的默认行为，确保系统健壮性。
+
+##### 测试场景
+接收到没有明确指定invoker字段的事件，系统应该默认使用webhook逻辑。
+
+##### 测试流程
+1. 构造缺失invoker字段的事件数据
+2. 调用load_rules函数
+3. 验证系统默认使用webhook逻辑
+4. 确认能正确加载真实规则
+
+##### 关键验证点
+- 默认行为的正确性
+- 规则加载的成功性
+- 系统容错能力
+
+##### 期望结果
+- 默认使用webhook逻辑加载规则
+- 返回真实的规则列表
 
 ### 3. 规则过滤测试 (test_filter_rules)
 
@@ -104,26 +207,26 @@
 - 只返回同时匹配分支和事件类型的规则
 - 过滤后的规则数量正确
 
-### 4. 内容获取测试 (test_get_code_contents)
+### 7. 内容获取测试 (test_get_code_contents)
 
 #### 测试目标
 验证三种评审模式(all/single/diff)的内容获取逻辑，确保每种模式都能正确获取对应的代码内容。
 
 #### 测试场景
 
-##### 4.1 All模式测试
+##### 7.1 All模式测试
 - **完整项目**：获取整个项目的代码文本
 - **目标过滤**：根据target字段过滤特定文件
 - **空项目**：没有代码文件的项目
 - **大型项目**：包含大量文件的项目
 
-##### 4.2 Single模式测试
+##### 7.2 Single模式测试
 - **单文件变更**：只有一个文件发生变更
 - **多文件变更**：多个文件同时变更
 - **新增文件**：包含新增文件的变更
 - **删除文件**：包含删除文件的变更
 
-##### 4.3 Diff模式测试
+##### 7.3 Diff模式测试
 - **简单差异**：少量行的修改
 - **大量差异**：大规模的代码变更
 - **二进制文件**：包含二进制文件的差异
@@ -146,7 +249,7 @@
 - Single模式返回每个文件的完整内容
 - Diff模式返回文件的差异内容
 
-### 5. 提示词生成测试 (test_prompt_generation)
+### 8. 提示词生成测试 (test_prompt_generation)
 
 #### 测试目标
 验证AI模型提示词的生成逻辑，包括自定义提示词和默认提示词两种方式。
@@ -175,7 +278,7 @@
 - 默认提示词按字段顺序组合
 - 变量正确替换为实际值
 
-### 6. 任务分发测试 (test_task_distribution)
+### 9. 任务分发测试 (test_task_distribution)
 
 #### 测试目标
 验证任务数据的正确构造和SQS消息的成功发送。
@@ -204,7 +307,7 @@
 - 消息内容包含完整的任务信息
 - 发送失败时正确更新失败计数
 
-### 7. 状态管理测试 (test_status_management)
+### 10. 状态管理测试 (test_status_management)
 
 #### 测试目标
 验证DynamoDB中请求状态的正确更新和管理。
@@ -233,7 +336,7 @@
 - 所有状态字段值准确
 - 异常情况得到妥善处理
 
-### 8. 异常处理测试 (test_exception_handling)
+### 11. 异常处理测试 (test_exception_handling)
 
 #### 测试目标
 验证各种异常情况的处理能力，确保系统的健壮性。
@@ -262,7 +365,7 @@
 - 返回适当的错误响应
 - 系统状态保持一致
 
-### 9. 边界条件测试 (test_boundary_conditions)
+### 12. 边界条件测试 (test_boundary_conditions)
 
 #### 测试目标
 验证系统在极端条件下的行为表现。
@@ -291,7 +394,7 @@
 - 系统保持稳定运行
 - 性能在可接受范围内
 
-### 10. 集成场景测试 (test_integration_scenarios)
+### 13. 集成场景测试 (test_integration_scenarios)
 
 #### 测试目标
 验证完整业务流程的端到端正确性。
