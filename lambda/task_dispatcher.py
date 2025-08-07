@@ -28,6 +28,31 @@ def send_message(data):
 		return False
 
 def format_prompt(pattern, variables, code=None):
+	"""
+	格式化提示词模板，支持变量替换
+	
+	设计原则：
+	- 支持{{variable}}格式的模板变量替换
+	- 变量不存在时保持原样，不会报错
+	- 特殊处理{{code}}变量，用于插入代码内容
+	
+	使用场景：
+	1. Webtool模式：替换用户在提示词中定义的自定义变量
+	2. Webhook模式：替换DIY字段中的模板变量
+	
+	Args:
+		pattern: 包含{{variable}}格式占位符的模板字符串
+		variables: 变量字典，key为变量名，value为替换值
+		code: 代码内容，用于替换{{code}}占位符
+	
+	Returns:
+		str: 替换后的字符串
+	
+	Example:
+		pattern = "检查{{language}}代码的{{type}}问题"
+		variables = {"language": "Java", "type": "质量"}
+		result = "检查Java代码的质量问题"
+	"""
 	text = pattern
 	if variables:
 		for key in variables:
@@ -38,39 +63,78 @@ def format_prompt(pattern, variables, code=None):
 	return text
 
 def get_prompt_data(mode, rule, code, variables=None):
+	"""
+	生成AI模型的提示词，支持两种不同的提示词构建策略
+	
+	设计原则：
+	1. Webtool模式（存在prompt_user字段）：
+	   - 直接使用用户通过Web界面输入的完整提示词
+	   - prompt_system：来自webtool_prompt_system字段
+	   - prompt_user：来自webtool_prompt_user字段
+	   - 适用于快速测试和原型验证
+	
+	2. Webhook模式（不存在prompt_user字段）：
+	   - 从.codereview/*.yaml文件的多个字段动态构建提示词
+	   - prompt_system：来自system字段
+	   - prompt_user：由DIY字段按order排序后动态组合构建
+	   - 适用于结构化的生产环境配置
+	
+	字段处理逻辑：
+	- Built-in字段：被排除，不参与prompt_user构建
+	- DIY字段：按order字段指定的顺序排序，组合成prompt_user
+	- 变量替换：支持{{variable}}格式的模板变量替换
+	
+	Args:
+		mode: 评审模式（diff/single/all）
+		rule: 规则对象，包含提示词配置
+		code: 代码内容
+		variables: 模板变量字典
+	
+	Returns:
+		tuple: (prompt_system, prompt_user) 或 (None, None)
+	"""
 	
 	if rule.get('mode') != mode: return None
 	
 	model = rule.get('model') or ''
 	if model.startswith('claude3'):
 		if rule.get('prompt_user'):
+			# 策略1：Webtool模式 - 使用预设的完整提示词
+			# prompt_user字段存在，说明这是通过webtool直接指定的完整提示词
 			prompt_system = rule.get('prompt_system')
 			prompt_user = rule.get('prompt_user')
 		else:
+			# 策略2：Webhook模式 - 从多个DIY字段动态构建提示词
+			# prompt_user字段不存在，需要从.codereview/*.yaml的多个字段构建
 			prompt_system = rule.get('system', '')
+			
+			# 排除Built-in字段和特殊字段，只保留DIY字段用于构建prompt_user
 			field_excludes = ['name', 'event', 'mode', 'model', 'branch', 'target', 'system', 'order', 'confirm']
 			
-			# 获取 order，如果不存在则设为空列表
+			# 获取order字段，用于指定DIY字段的排序顺序
 			order = rule.get('order', [])
 			
-			# 创建一个包含所有非排除字段的列表
+			# 提取所有DIY字段（非排除字段）
 			all_fields = [key for key in rule.keys() if key.lower() not in field_excludes]
 			
-			# 按照 order 中的顺序排序字段，未在 order 中的字段保持原顺序
+			# 按照order中的顺序排序DIY字段，未在order中的字段保持原顺序
 			sorted_fields = sorted(all_fields, key=lambda x: order.index(x) if x in order else len(order))
 			
-			# 构建 prompt_user
+			# 将排序后的DIY字段组合成prompt_user
 			prompt_user = ''
 			for key in sorted_fields:
 				value = rule.get(key)
 				prompt_user = f'{prompt_user}\n\n{value}' if prompt_user else value
 			
+			# 在DIY字段前添加代码内容
 			prompt_user = f'以下是我的代码:\n{code}\n{prompt_user}'
 		
+		# 对两种模式的提示词都进行变量替换
 		prompt_system = format_prompt(prompt_system, variables, code=code)
 		prompt_user = format_prompt(prompt_user, variables, code=code)
 		return prompt_system, prompt_user
 	else:
+		# 非Claude模型不支持
 		return None, None
 	
 def send_task_to_sqs(event, rules, request_id, commit_id, contents, variables=None):
@@ -201,7 +265,36 @@ def update_project_name(commit_id, request_id, project_name):
 	)
 
 def load_rules(event, repo_context, commit_id=None, branch=None):
+	"""
+	加载评审规则，支持两种不同的触发模式
+	
+	设计原则：
+	- Webtool模式：用户通过Web界面直接输入完整的系统提示词和用户提示词
+	- Webhook模式：从仓库的.codereview/*.yaml文件中加载结构化规则配置
+	
+	字段分类：
+	1. Built-in属性（系统固定字段）：
+	   - name, mode, model, event, branch, target, confirm
+	
+	2. 特殊字段（模式特定）：
+	   - prompt_system, prompt_user：仅在webtool模式下存在，用户直接指定完整提示词
+	   - system, order：仅在webhook模式下使用，用于动态构建提示词
+	
+	3. DIY属性（用户自定义字段）：
+	   - .codereview/*.yaml中的任意自定义字段（如business, design, requirement等）
+	   - 仅在webhook模式下存在，用于按order字段排序后动态构建prompt_user
+	
+	Args:
+		event: 触发事件，包含invoker字段区分触发模式
+		repo_context: 仓库上下文
+		commit_id: 提交ID
+		branch: 分支名
+	
+	Returns:
+		list: 规则列表，webtool模式返回单个构造规则，webhook模式返回从YAML加载的规则
+	"""
 	if event.get('invoker') == 'webtool':
+		# Webtool模式：构造单个规则，包含用户直接输入的完整提示词
 		rules = [
 			{
 				"name": event.get("rule_name"),
@@ -212,12 +305,15 @@ def load_rules(event, repo_context, commit_id=None, branch=None):
 				"branch": event.get('target_branch'),
 				"target": event.get('target'),
 				"confirm": event.get('confirm', False),
+				# 特殊字段：用户通过webtool直接指定的完整提示词
 				"prompt_system": event.get('webtool_prompt_system'),
 				"prompt_user": event.get('webtool_prompt_user')
 			}
 		]
 		log.info(f'Make up rule for webtool.', extra=dict(rules=rules))
 	else:
+		# Webhook模式：从仓库的.codereview/*.yaml文件加载结构化规则
+		# 这些规则包含system字段和多个DIY字段，不包含prompt_user字段
 		rules = codelib.get_rules(repo_context, commit_id, branch)
 	return rules
 
