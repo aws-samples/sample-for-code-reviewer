@@ -118,13 +118,35 @@ project = get_mock_gitlab_project("123")
 diff = project.repository_compare(commit1, commit2)
 ```
 
-### 在测试中使用Patch
+### 推荐的测试方式：直接使用Mock Data（不使用patch）
+
+```python
+from test.mock_data.repositories.mock_repository_manager import get_mock_gitlab_project
+
+class TestMyModule:
+    def test_my_function(self):
+        """推荐方式：直接使用Mock Data系统，避免patch装饰器"""
+        # 直接创建Mock GitLab Project对象
+        mock_project = get_mock_gitlab_project("123")
+        
+        # 直接构造repo_context，让业务逻辑真实执行
+        repo_context = {'source': 'gitlab', 'project': mock_project}
+        
+        # 调用被测试函数，所有业务逻辑真实执行
+        result = my_module.function(repo_context, other_params)
+        
+        # 验证结果
+        assert result is not None
+```
+
+### 不推荐的方式：使用patch装饰器
+
 ```python
 from unittest.mock import patch
 from test.mock_data.repositories.mock_gitlab_helper import get_simple_mock_project
 
 class TestMyModule:
-    @patch('lambda.gitlab_code.get_gitlab_project')
+    @patch('lambda.gitlab_code.get_gitlab_project')  # ❌ 不推荐
     def test_my_function(self, mock_get_project):
         # 配置Mock
         mock_get_project.return_value = get_simple_mock_project({
@@ -134,6 +156,12 @@ class TestMyModule:
         # 执行测试
         # ... 你的测试代码
 ```
+
+**为什么不推荐patch方式**：
+- ❌ 容易造成重复Mock和逻辑矛盾
+- ❌ patch路径管理复杂，容易出错
+- ❌ 隐藏了业务逻辑的执行过程
+- ❌ 不符合"让业务逻辑真实执行"的测试策略
 
 ## API一致性
 
@@ -214,6 +242,9 @@ Mock Data系统严格遵循测试策略原则：
 - ✅ **测试速度快**
 - ✅ **数据可控可重复**
 - ✅ **符合测试策略原则**
+- ✅ **避免patch装饰器的复杂性**
+- ✅ **逻辑清晰，无重复Mock矛盾**
+- ✅ **让业务逻辑完全真实执行**
 
 ## 维护指南
 

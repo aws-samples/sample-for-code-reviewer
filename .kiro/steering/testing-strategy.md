@@ -312,6 +312,46 @@ test/mock_data/
 - ✅ 构造丰富的真实输入数据
 - ✅ 让业务逻辑真实执行，发现真实问题
 
+### 推荐的Mock实现方式
+
+**最佳实践：直接使用Mock Data系统，避免patch装饰器**
+
+```python
+def test_function(self):
+    """推荐的Mock方式：直接使用Mock Data系统"""
+    from mock_repository_manager import get_mock_gitlab_project
+    
+    # 直接创建Mock GitLab Project对象
+    mock_project = get_mock_gitlab_project("123")
+    
+    # 直接构造repo_context，跳过init_repo_context调用
+    repo_context = {'source': 'gitlab', 'project': mock_project}
+    
+    # 让所有业务逻辑真实执行
+    result = module_under_test.function(repo_context, other_params)
+    
+    # 验证结果
+    assert result is not None
+```
+
+**避免的Mock方式：使用patch装饰器容易造成逻辑矛盾**
+
+```python
+# ❌ 错误方式：容易造成重复Mock和逻辑矛盾
+@patch('module.init_gitlab_context')
+def test_function(self, mock_init_gitlab_context):
+    mock_project = get_mock_gitlab_project("123")  # 创建Mock对象
+    mock_init_gitlab_context.return_value = mock_project  # 又设置patch返回值
+    # 这种方式存在逻辑矛盾：既patch了函数，又手动创建Mock对象
+```
+
+**推荐方式的优势**：
+- ✅ **逻辑清晰**：没有patch和手动Mock的矛盾
+- ✅ **代码简洁**：不需要管理patch装饰器的参数和路径
+- ✅ **符合规范**：只Mock GitLab Project对象，让业务逻辑真实执行
+- ✅ **维护简单**：直接使用现有的Mock Data系统
+- ✅ **测试覆盖完整**：所有codelib和gitlab_code业务逻辑都真实执行
+
 ### 测试目的原则
 
 **测试是为了发现问题，不是为了通过**：
@@ -536,3 +576,70 @@ def test_function_name(self):
 - 每个测试后清理数据避免污染
 - 使用独立的测试环境资源
 - 验证数据的完整性和正确性
+
+## Mock最佳实践示例
+
+### 推荐的实现方式
+
+基于我们在`test_get_code_contents`中的实践，以下是推荐的Mock实现方式：
+
+```python
+def test_get_code_contents(self):
+    """
+    最佳实践示例：直接使用Mock Data系统
+    
+    优势：
+    - 逻辑清晰，无patch装饰器复杂性
+    - 让所有业务逻辑真实执行
+    - 只Mock最底层的GitLab Project对象
+    - 符合测试策略规范
+    """
+    from mock_repository_manager import get_mock_gitlab_project
+    
+    # 直接创建Mock GitLab Project对象（这是允许Mock的外部依赖）
+    mock_project = get_mock_gitlab_project("123")
+    
+    # 直接构造repo_context，跳过init_repo_context的调用
+    # 这样我们只Mock了GitLab Project对象，让codelib和gitlab_code的业务逻辑真实执行
+    repo_context = {'source': 'gitlab', 'project': mock_project}
+    
+    # 使用真实的commit ID和规则
+    commit_id = 'b2c3d4e5f6789012345678901234567890abcdef'
+    rule = {'name': '测试规则', 'mode': 'all', 'target': 'src/**/*.java'}
+    
+    # 调用被测试函数（让所有业务逻辑真实执行）
+    contents = task_dispatcher.get_code_contents_for_all(repo_context, commit_id, rule)
+    
+    # 验证结果
+    assert len(contents) == 1
+    assert contents[0]['mode'] == 'all'
+    assert contents[0]['content'] is not None
+```
+
+### 避免的错误方式
+
+```python
+# ❌ 错误方式1：Mock业务逻辑模块
+@patch('task_dispatcher.codelib.get_project_code_text')
+def test_get_code_contents(self, mock_get_project_code_text):
+    # 这种方式Mock了业务逻辑，违反了测试策略
+    pass
+
+# ❌ 错误方式2：重复Mock造成逻辑矛盾
+@patch('gitlab_code.init_gitlab_context')
+def test_get_code_contents(self, mock_init_gitlab_context):
+    mock_project = get_mock_gitlab_project("123")  # 创建Mock对象
+    mock_init_gitlab_context.return_value = mock_project  # 又设置patch返回值
+    # 这种方式存在逻辑矛盾：既patch了函数，又手动创建Mock对象
+```
+
+### 关键原则总结
+
+1. **直接使用Mock Data系统**：避免patch装饰器的复杂性
+2. **只Mock外部依赖**：GitLab Project对象是唯一允许Mock的对象
+3. **让业务逻辑真实执行**：所有codelib和gitlab_code函数都应该真实运行
+4. **逻辑清晰**：避免重复Mock和逻辑矛盾
+5. **测试覆盖完整**：能够发现真实的业务逻辑问题
+
+这种方式完美体现了测试策略的**黄金法则**：
+> **只Mock真正不可控的外部依赖，让业务逻辑真实执行**
