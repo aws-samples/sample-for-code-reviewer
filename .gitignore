@@ -16,4 +16,4 @@ TODOLIST.md
 input.yaml
 output.yaml
 sync.py
-*/__pycache__/
+**/__pycache__
