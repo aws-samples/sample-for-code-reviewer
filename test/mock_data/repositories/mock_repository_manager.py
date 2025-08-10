@@ -70,7 +70,7 @@ class MockRepositoryManager:
         mock_project.files.raw.side_effect = lambda file_path, ref: \
             self._mock_files_raw(repo_info, file_path, ref)
         
-        mock_project.repository_tree.side_effect = lambda path="", ref="main", recursive=True: \
+        mock_project.repository_tree.side_effect = lambda path="", ref="main", recursive=True, all=True: \
             self._mock_repository_tree(repo_info, path, ref, recursive)
         
         mock_project.files.get.side_effect = lambda file_path, ref: \
