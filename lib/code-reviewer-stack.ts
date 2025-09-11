@@ -93,6 +93,30 @@ export class CodeReviewerStack extends cdk.Stack {
 			description: '[Optional] Access token for GitHub/GitLab API access.',
 		});
 
+		// Add CloudFormation Interface for parameter grouping
+		this.templateOptions.metadata = {
+			'AWS::CloudFormation::Interface': {
+				ParameterGroups: [
+					{
+						Label: { default: 'Project Configuration' },
+						Parameters: ['ProjectName', 'EnableApiKey']
+					},
+					{
+						Label: { default: 'Bedrock Configuration (Optional)' },
+						Parameters: ['BedrockAccessKey', 'BedrockSecretKey', 'BedrockRegion']
+					},
+					{
+						Label: { default: 'Github Configuration (Optional)' },
+						Parameters: ['AccessToken']
+					},
+					{
+						Label: { default: 'Email Configuration (Optional)' },
+						Parameters: ['SMTPServer', 'SMTPPort', 'SMTPUsername', 'SMTPPassword', 'ReportSender', 'ReportReceiver']
+					}
+				]
+			}
+		};
+
 		/* API */
 		const api = new CRApi(this, 'API', { 
 			prefix: prefix, 
