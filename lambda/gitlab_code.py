@@ -25,7 +25,53 @@ def parse_gitlab_errcode(ex):
 			return 'NotFound'
 	return 'Unknow'
 
+def get_commit_files(project, commit_id):
+	"""
+	获取指定提交的所有文件（用于新分支第一次提交的情况）
+	
+	参数:
+		project: GitLab项目对象
+		commit_id: 提交ID
+		
+	返回:
+		dict: 文件路径到diff内容的映射
+	"""
+	try:
+		log.info(f'Getting all files for commit: {commit_id}')
+		
+		# 获取提交对象
+		commit = project.commits.get(commit_id)
+		
+		files = {}
+		
+		# 获取提交的diff信息
+		diffs = commit.diff()
+		
+		# 遍历提交中的所有文件变更
+		for diff_item in diffs:
+			filename = diff_item.get('new_path') or diff_item.get('old_path')
+			if filename:
+				# 对于新分支的第一次提交，使用diff内容
+				diff_content = diff_item.get('diff', '')
+				files[filename] = diff_content
+				log.debug(f'Added file from commit: {filename}')
+		
+		log.info(f'Found {len(files)} files in commit {commit_id}')
+		return files
+		
+	except Exception as ex:
+		error_msg = f'Fail to get commit files for {commit_id}: {ex}'
+		log.error(error_msg, extra=dict(exception=str(ex)))
+		raise base.CodelibException(error_msg, code=parse_gitlab_errcode(ex)) from ex
+
 def get_diff_files(project, from_commit_id, to_commit_id):
+	# 检查是否为全零commit_id（新分支第一次提交的情况）
+	zero_commit = "0000000000000000000000000000000000000000"
+	if from_commit_id == zero_commit:
+		log.info(f'Detected zero commit_id, treating as new branch first commit')
+		# 对于新分支第一次提交，获取该提交的所有文件
+		return get_commit_files(project, to_commit_id)
+	
 	comparison = project.repository_compare(from_commit_id, to_commit_id)
 	commits = comparison['diffs']
 	files = {}
@@ -103,7 +149,7 @@ def parse_gitlab_parameters(event):
 		project_id = body_project.get('id'),
 		project_name = body_project.get('name'),
 		repo_url = repo_url,
-		private_token = headers.get('X-Gitlab-Token'),
+		private_token = headers.get('X-Gitlab-Token') or os.getenv('ACCESS_TOKEN', ''),  # 优先使用webhook中的token，否则使用环境变量
 		target_branch = target_branch,
 		event_type = event_type
 	)
@@ -151,7 +197,15 @@ def get_gitlab_file_content(project, file_path, ref_name):
 
 def get_rules(project, commit_id, branch):
 	folder = '.codereview'
-	ref = commit_id if commit_id else branch
+	
+	# 检查是否为全零commit_id（新分支第一次提交的情况）
+	zero_commit = "0000000000000000000000000000000000000000"
+	if commit_id == zero_commit:
+		log.info(f'Detected zero commit_id, using branch {branch} as ref')
+		ref = branch
+	else:
+		ref = commit_id if commit_id else branch
+	
 	try:
 		items = project.repository_tree(path=folder, ref=ref, recursive=True)
 		filenames = [ item.get('name') for item in items if item['name'].lower().endswith('.yaml') ]

@@ -86,6 +86,12 @@ export class CodeReviewerStack extends cdk.Stack {
 			default: '',
 			description: '[Optional] Region for Bedrock Invoking.',
 		});
+		
+		const access_token = new cdk.CfnParameter(this, 'AccessToken', {
+			type: 'String',
+			default: '',
+			description: '[Optional] Access token for GitHub/GitLab API access.',
+		});
 
 		/* API */
 		const api = new CRApi(this, 'API', { 
@@ -111,6 +117,7 @@ export class CodeReviewerStack extends cdk.Stack {
 		/* 配置环境变量 */
 		api.request_handler.addEnvironment('REQUEST_TABLE', database.request_table.tableName)
 		api.request_handler.addEnvironment('TASK_DISPATCHER_FUN_NAME', api.task_dispatcher.functionName)
+		api.request_handler.addEnvironment('ACCESS_TOKEN', access_token.valueAsString)
 
 		api.result_checker.addEnvironment('BUCKET_NAME', buckets.report_bucket.bucketName)
 		api.result_checker.addEnvironment('REQUEST_TABLE', database.request_table.tableName)
@@ -121,6 +128,7 @@ export class CodeReviewerStack extends cdk.Stack {
 		api.task_dispatcher.addEnvironment('TASK_TABLE', database.task_table.tableName)
 		api.task_dispatcher.addEnvironment('TASK_SQS_URL', sqs.task_queue.queueUrl)
 		api.task_dispatcher.addEnvironment('SNS_TOPIC_ARN', sns.report_topic.topicArn)
+		api.task_dispatcher.addEnvironment('ACCESS_TOKEN', access_token.valueAsString)
 
 		api.task_executor.addEnvironment('BUCKET_NAME', buckets.report_bucket.bucketName)
 		api.task_executor.addEnvironment('REQUEST_TABLE', database.request_table.tableName)
@@ -138,6 +146,7 @@ export class CodeReviewerStack extends cdk.Stack {
 		api.task_executor.addEnvironment('BEDROCK_ACCESS_KEY', bedrock_access_key.valueAsString)
 		api.task_executor.addEnvironment('BEDROCK_SECRET_KEY', bedrock_secret_key.valueAsString)
 		api.task_executor.addEnvironment('BEDROCK_REGION', bedrock_region.valueAsString)
+		api.task_executor.addEnvironment('ACCESS_TOKEN', access_token.valueAsString)
 
 		api.report_receiver.addEnvironment('SMTP_SERVER', smtp_server.valueAsString)
 		api.report_receiver.addEnvironment('SMTP_PORT', smtp_port.valueAsString)

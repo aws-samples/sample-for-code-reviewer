@@ -15,7 +15,7 @@ export class CRCron extends Construct {
 		/* 处理进度的Lambda */
 		this.cron_func = new lambda.Function(this, 'CronFunction', {
 			functionName: `${props.prefix}-cron-function`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'cron_function.lambda_handler',
 			timeout: cdk.Duration.seconds(30),
