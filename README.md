@@ -17,6 +17,20 @@
 
 ## 3. 项目架构
 
+![系统架构图](doc/architecture.png)
+
+Code Reviewer采用无服务器架构，主要包含以下核心组件：
+
+- **API Gateway**: 接收GitLab/GitHub Webhook和Web Tool请求
+- **Lambda函数群**: 处理请求解析、任务分发、代码评审执行等核心逻辑
+- **DynamoDB**: 存储请求记录和任务状态信息
+- **SQS**: 异步任务队列，支持并行处理多个评审任务
+- **S3**: 存储评审报告和任务结果数据
+- **SNS**: 发送评审完成通知
+- **Bedrock**: 调用Claude3模型执行代码评审分析
+
+系统支持GitLab和GitHub双平台，通过Webhook自动触发或Web Tool手动触发评审流程。
+
 
 ## 4. 代码结构
 
@@ -69,7 +83,7 @@
 
 ```
 
-## API介绍
+## 5. API介绍
 
 - **POST /codereview**
 
@@ -132,7 +146,7 @@
 	}
 	```
 	
-## 5. Lambda函数介绍
+## 6. Lambda函数介绍
 
 方案部署后会产生多个Lambda函数，会以部署时的Project Name参数作为前缀。例如Project Name=sample-project，则数据初始化Lambda名称为`sample-project-request-handler`
 
@@ -193,7 +207,7 @@
 	对应代码`/lambda/result_checker.py`
 
 
-## 6. 如何微调
+## 7. 如何微调
 
 - **代码评审报告希望改一种HTML展现方式，怎么办？**
 
@@ -221,7 +235,7 @@
 
 	可以在.codeview.yaml中增加类似于`modules`的key，在`rule`表中增加`module`类型的评审规则，在`task-dispatcher`对任务进行拆分的时候，根据module信息获取对应的代码，组装成消息放入SQS。
 
-## 7. FAQ
+## 8. FAQ
 
 - **安装时非必填参数没有填写，之后如何补填？**
 	
@@ -277,7 +291,7 @@
 
 	或者，也可以自行改写`{project_name}-task-executor`，将Bedrock调用过程改为您需要的跨区域调用方式。具体方法可参看《[How do I use a cross-account to invoke Amazon Bedrock in my account?](https://repost.aws/knowledge-center/bedrock-invoke-with-cross-account)》
 
-## 8. 故障排除
+## 9. 故障排除
 
 - **Missing Authentication Token**
 
