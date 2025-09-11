@@ -3,12 +3,13 @@
 export const vars = {
     formData: {
         endpoint: '',
-        gitlabUrl: '',
+        repositoryUrl: '',
+        repositoryType: 'gitlab',
         apiKey: '',
         enableApiKey: false,
         accessToken: '',
         enableAccessToken: false,
-        gitlabBranch: 'main',
+        repositoryBranch: 'main',
         model: 'claude3-sonnet',
         targetFileList: '**',
         type: 'files',
@@ -93,4 +94,4 @@ export const inbuiltSections = [
     'response'
 ];
 
-export const nonCancelableSections = ['endpoint-config', 'gitlab-config', 'rules-config', 'toolbar'];
+export const nonCancelableSections = ['endpoint-config', 'repository-config', 'rules-config', 'toolbar'];

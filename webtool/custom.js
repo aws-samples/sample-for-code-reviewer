@@ -8,7 +8,7 @@ export function executeCodeReviewWithAxios(params) {
 	const {
 		endpoint,
 		apiKey,
-		gitlabUrl,
+		repositoryUrl,
 		type,
 		commitId,
 		fromCommitId,
@@ -29,13 +29,17 @@ export function executeCodeReviewWithAxios(params) {
 		'Content-Type': 'application/json'
 	};
 
-	const pathWithNamespace = getPathWithNamespace(gitlabUrl);
+	const pathWithNamespace = getPathWithNamespace(repositoryUrl);
+	
+	// 获取仓库类型
+	const repositoryTypeDisplay = document.getElementById('repository-type-display');
+	const repositoryType = repositoryTypeDisplay ? repositoryTypeDisplay.getAttribute('data-value') || 'gitlab' : 'gitlab';
 	
 	let data = {
 		'invoker': 'webtool',
 		'target_branch': branch,
 		'previous_commit_id': fromCommitId,
-		'web_url': gitlabUrl,
+		'web_url': repositoryUrl,
 		'ref': branch,
 		'path_with_namespace': pathWithNamespace,
 		'prompt_user': prompt,
@@ -43,7 +47,8 @@ export function executeCodeReviewWithAxios(params) {
 		'model': model,
 		'target': targetFileList,
 		'rule_name': ruleName,
-		'confirm': confirm
+		'confirm': confirm,
+		'source': repositoryType
 	}
 	if (confirm) {
 		data['confirm_prompt'] = confirmPrompt || ''
@@ -80,7 +85,7 @@ export function executeCodeReviewWithAxios(params) {
 		});
 }
 
-export function fetchRules(endpoint, gitlabUrl, accessToken, apiKey, branch) {
+export function fetchRules(endpoint, repositoryUrl, repositoryType, accessToken, apiKey, branch) {
 	showInfoDialog('信息提示', '正在刷新规则，请稍后');
 
 	const headers = {
@@ -88,22 +93,28 @@ export function fetchRules(endpoint, gitlabUrl, accessToken, apiKey, branch) {
 	};
 
 	if (accessToken) {
-		headers['X-Gitlab-Token'] = accessToken;
+		// 根据仓库类型设置不同的header
+		if (repositoryType === 'github') {
+			headers['X-GitHub-Token'] = accessToken;
+		} else {
+			headers['X-Gitlab-Token'] = accessToken;
+		}
 	}
 
 	if (apiKey) {
 		headers['X-API-KEY'] = apiKey;
 	}
 
-	const pathWithNamespace = getPathWithNamespace(gitlabUrl);
-	const repoUrl = gitlabUrl.replace(`/${pathWithNamespace}`, '');
+	const pathWithNamespace = getPathWithNamespace(repositoryUrl);
+	const repoUrl = repositoryUrl.replace(`/${pathWithNamespace}`, '');
 
 	return axios.get(`${endpoint}/rules`, {
 		headers,
 		params: {
 			project_id: pathWithNamespace,
 			repo_url: repoUrl,
-			target_branch: branch
+			target_branch: branch,
+			source: repositoryType
 		}
 	}).then(response => {
 		if (response.status !== 200 || !response.data.succ) {
@@ -169,7 +180,9 @@ export function fetchYamlResources() {
 	const domain = ''
 	const yamlFiles = ['template.all.yaml', 'template.diff.yaml', 'template.single.yaml'];
 	const promises = yamlFiles.map(file => 
-		axios.get(domain + file)
+		axios.get(domain + file, {
+			responseType: 'text'
+		})
 			.then(response => {
 				let result = jsyaml.load(response.data);
 				console.log('Load ', file, ':', result)

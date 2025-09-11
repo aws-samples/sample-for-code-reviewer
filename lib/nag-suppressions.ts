@@ -205,6 +205,32 @@ function addIamSuppressions(stack: Stack): void {
  * Lambda 相关警告抑制
  */
 function addLambdaSuppressions(stack: Stack): void {
+  // 抑制所有 Lambda 函数的运行时版本警告
+  const lambdaFunctionPaths = [
+    '/CodeReviewerStack/API/RequestHandler/Resource',
+    '/CodeReviewerStack/API/ResultChecker/Resource',
+    '/CodeReviewerStack/API/TaskDispatcher/Resource',
+    '/CodeReviewerStack/API/TaskExecutor/Resource',
+    '/CodeReviewerStack/API/RuleLoader/Resource',
+    '/CodeReviewerStack/API/RuleUpdater/Resource',
+    '/CodeReviewerStack/API/ReportReceiver/Resource',
+    '/CodeReviewerStack/Cron/CronFunction/Resource'
+  ];
+  
+  // 为每个 Lambda 函数添加运行时版本抑制规则
+  lambdaFunctionPaths.forEach(path => {
+    NagSuppressions.addResourceSuppressionsByPath(
+      stack,
+      path,
+      [
+        {
+          id: 'AwsSolutions-L1',
+          reason: '使用 Python 3.12 以确保与 Lambda Layer 中的依赖包兼容性，Python 3.13 存在包兼容性问题'
+        }
+      ]
+    );
+  });
+
   // Cron Function 的通配符权限
   NagSuppressions.addResourceSuppressionsByPath(
     stack,

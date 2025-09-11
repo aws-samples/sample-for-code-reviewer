@@ -22,10 +22,23 @@ export class CRApi extends Construct {
 	constructor(scope: Construct, id: string, props: { prefix: string; api_key_condition: cdk.CfnCondition }) {
 		super(scope, id);
 
-		const layer = new lambda.LayerVersion(this, 'LayerVersion', {
-			code: lambda.Code.fromAsset('layer/layer.zip'),
-			compatibleRuntimes: [lambda.Runtime.PYTHON_3_13],
-			description: 'This layer includes pyyaml, python-gitlab module.',
+		// Create three separate layers
+		const commonLayer = new lambda.LayerVersion(this, 'CommonLayerVersion', {
+			code: lambda.Code.fromAsset('layer/common-layer.zip'),
+			compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+			description: 'Common dependencies: boto3, requests, PyYAML, typing_extensions',
+		})
+
+		const gitlabLayer = new lambda.LayerVersion(this, 'GitLabLayerVersion', {
+			code: lambda.Code.fromAsset('layer/gitlab-layer.zip'),
+			compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+			description: 'GitLab dependencies: python-gitlab',
+		})
+
+		const githubLayer = new lambda.LayerVersion(this, 'GitHubLayerVersion', {
+			code: lambda.Code.fromAsset('layer/github-layer.zip'),
+			compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+			description: 'GitHub dependencies: PyGithub with all dependencies',
 		})
 
 		const logGroup = new logs.LogGroup(this, 'CodeReviewerLogGroup', {
@@ -37,11 +50,11 @@ export class CRApi extends Construct {
 		/* 处理Request的Lambda */
 		this.request_handler = new lambda.Function(this, 'RequestHandler', {
 			functionName: `${props.prefix}-request-handler`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'request_handler.lambda_handler',
 			timeout: cdk.Duration.seconds(30),
-			layers: [ layer ],
+			layers: [ commonLayer, gitlabLayer, githubLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -50,11 +63,11 @@ export class CRApi extends Construct {
 		/* 请求结果的Lambda */
 		this.result_checker = new lambda.Function(this, 'ResultChecker', {
 			functionName: `${props.prefix}-result-checker`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'result_checker.lambda_handler',
 			timeout: cdk.Duration.seconds(30),
-			layers: [ layer ],
+			layers: [ commonLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -63,11 +76,11 @@ export class CRApi extends Construct {
 		/* Bedrock任务分派的Lambda */
 		this.task_dispatcher = new lambda.Function(this, 'TaskDispatcher', {
 			functionName: `${props.prefix}-task-dispatcher`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'task_dispatcher.lambda_handler',
 			timeout: cdk.Duration.seconds(60 * 15),
-			layers: [ layer ],
+			layers: [ commonLayer, gitlabLayer, githubLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -77,11 +90,11 @@ export class CRApi extends Construct {
 		/* Bedrock任务执行的Lambda */
 		this.task_executor = new lambda.Function(this, 'TaskExecutor', {
 			functionName: `${props.prefix}-task-executor`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'task_executor.lambda_handler',
 			timeout: cdk.Duration.seconds(60 * 15),
-			layers: [ layer ],
+			layers: [ commonLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -95,11 +108,11 @@ export class CRApi extends Construct {
 		/* 刷新PE规则的Lambda */
 		this.rule_loader = new lambda.Function(this, 'RuleLoader', {
 			functionName: `${props.prefix}-rule-loader`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'rule_loader.lambda_handler',
 			timeout: cdk.Duration.seconds(60),
-			layers: [ layer ],
+			layers: [ commonLayer, gitlabLayer, githubLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -107,11 +120,11 @@ export class CRApi extends Construct {
 
 		this.rule_updater = new lambda.Function(this, 'RuleUpdater', {
 			functionName: `${props.prefix}-rule-updater`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'rule_updater.lambda_handler',
 			timeout: cdk.Duration.seconds(60),
-			layers: [ layer ],
+			layers: [ commonLayer, gitlabLayer, githubLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -120,11 +133,11 @@ export class CRApi extends Construct {
 		/* 接受报告的Lambda */
 		this.report_receiver = new lambda.Function(this, 'ReportReceiver', {
 			functionName: `${props.prefix}-report-receiver`,
-			runtime: lambda.Runtime.PYTHON_3_13,
+			runtime: lambda.Runtime.PYTHON_3_12,
 			code: lambda.Code.fromAsset('lambda'),
 			handler: 'report_receiver.lambda_handler',
 			timeout: cdk.Duration.seconds(30),
-			layers: [ layer ],
+			layers: [ commonLayer ],
 			loggingFormat: lambda.LoggingFormat.JSON,
 			applicationLogLevelV2: lambda.ApplicationLogLevel.INFO,
 			logGroup: logGroup
@@ -146,7 +159,7 @@ export class CRApi extends Construct {
 			defaultCorsPreflightOptions: {
 				allowOrigins: apigateway.Cors.ALL_ORIGINS,
 				allowMethods: apigateway.Cors.ALL_METHODS,
-				allowHeaders: [ 'Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Gitlab-Token' ],
+				allowHeaders: [ 'Content-Type', 'X-Amz-Date', 'Authorization', 'X-Api-Key', 'X-Amz-Security-Token', 'X-Gitlab-Token', 'X-GitHub-Token' ],
 				allowCredentials: true,
 				maxAge: cdk.Duration.days(1)
 			}

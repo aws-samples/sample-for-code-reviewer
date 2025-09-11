@@ -1,0 +1,27 @@
+{
+  "github": {
+    "url": "https://api.github.com",
+    "token": "your_github_token_here",
+    "username": "your_username",
+    "test_repo": "test-repo-name",
+    "project_id": "your_username/test-repo-name",
+    "repo_url": "git@github.com:your_username/test-repo-name.git",
+    "owner": "your_username",
+    "repo_name": "test-repo-name"
+  },
+  "gitlab": {
+    "url": "https://gitlab.com",
+    "token": "your_gitlab_token_here",
+    "username": "your_username",
+    "test_repo": "test-repo-name",
+    "project_id": "your_username/test-repo-name",
+    "repo_url": "git@gitlab.com:your_username/test-repo-name.git"
+  },
+  "aws": {
+    "endpoint": "https://your-api-gateway-url.execute-api.us-east-1.amazonaws.com/prod",
+    "request_table": "code-reviewer-demo-request",
+    "task_table": "code-reviewer-demo-task",
+    "sqs_url": "https://sqs.us-east-1.amazonaws.com/YOUR_ACCOUNT_ID/code-reviewer-demo-queue",
+    "task_dispatcher_function": "code-reviewer-demo-task-dispatcher"
+  }
+}

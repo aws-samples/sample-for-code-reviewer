@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v1.3
+
+- Add: GitHub仓库支持，包含完整API集成
+- Add: 完整测试框架，支持自动化测试数据推送、验证和端到端测试
+- Add: 模块化Lambda层构建系统和CDK一键部署脚本
+- Add: 完整的技术架构文档和业务流程说明
+- Add: 大量模拟测试数据用于多场景测试验证
+- Changed: Web界面支持GitHub仓库配置
+- Changed: 后端架构支持多平台仓库操作
+
 ## v1.2
 
 - ADD: PE调试工具重命名为Web Tool

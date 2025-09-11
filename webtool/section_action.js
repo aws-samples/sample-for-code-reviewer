@@ -42,12 +42,12 @@ export function executeCodeReview() {
         enableApiKey: document.getElementById('enable-api-key')?.checked || false,
         accessToken: accessToken,
         enableAccessToken: enableAccessToken,
-        gitlabUrl: document.getElementById('gitlab-url-display')?.textContent || '',
+        repositoryUrl: document.getElementById('repository-url-display')?.textContent || '',
         type: typeMapping[type] || type,
         commitId: commitId,
         fromCommitId: fromCommitId,
         toCommitId: toCommitId,
-        branch: document.getElementById('gitlab-branch-display')?.textContent || '',
+        branch: document.getElementById('repository-branch-display')?.textContent || '',
         targetFileList: document.getElementById('target-file-list')?.value || '',
         prompt: generatePrompt(),
         model: document.getElementById('model-select')?.value || '',
@@ -99,17 +99,18 @@ export function executeCodeReview() {
 
 export function refresh_rules() {
     const endpoint = document.getElementById('endpoint')?.value || '';
-    const gitlabUrl = document.getElementById('gitlab-url-display')?.textContent || '';
+    const repositoryUrl = document.getElementById('repository-url-display')?.textContent || '';
+    const repositoryType = document.getElementById('repository-type-display')?.getAttribute('data-value') || 'gitlab';
     const accessTokenDisplay = document.getElementById('access-token-display');
     const enableAccessToken = accessTokenDisplay.getAttribute('data-type') === 'password';
     const accessToken = enableAccessToken ? accessTokenDisplay.getAttribute('data-value') : '';
     const apiKey = document.getElementById('api-key')?.value || '';
     const enableApiKey = document.getElementById('enable-api-key')?.checked || false;
-    const branch = document.getElementById('gitlab-branch-display')?.textContent || '';
+    const branch = document.getElementById('repository-branch-display')?.textContent || '';
 
-    if (endpoint && gitlabUrl && (enableAccessToken ? accessToken : true)) {
+    if (endpoint && repositoryUrl && (enableAccessToken ? accessToken : true)) {
         showInfoDialog('信息', '加载规则中...');
-        fetchRules(endpoint, gitlabUrl, enableAccessToken ? accessToken : '', enableApiKey ? apiKey : '', branch)
+        fetchRules(endpoint, repositoryUrl, repositoryType, enableAccessToken ? accessToken : '', enableApiKey ? apiKey : '', branch)
             .then((rules) => {
                 closeInfoDialog();
                 showAllSections();
@@ -152,7 +153,7 @@ export function refresh_rules() {
                 hideAllSections();
             });
     } else {
-        showErrorDialog('请先填写 Endpoint、Gitlab 地址' + (enableAccessToken ? '和 Access Token' : ''));
+        showErrorDialog('请先填写 Endpoint、代码仓库地址' + (enableAccessToken ? '和 Access Token' : ''));
         hideAllSections();
     }
 }
@@ -160,7 +161,7 @@ export function refresh_rules() {
 export function showAllSections() {
     const hiddenSections = document.querySelectorAll('.hidden-on-load');
     hiddenSections.forEach(section => {
-        if (!section.closest('#endpoint-config') && !section.closest('#gitlab-config')) {
+        if (!section.closest('#endpoint-config') && !section.closest('#repository-config')) {
             section.classList.remove('hidden-on-load');
             section.classList.add('hidden-on-load-disabled');
         }
@@ -170,7 +171,7 @@ export function showAllSections() {
 export function hideAllSections() {
     const hiddenSections = document.querySelectorAll('.hidden-on-load-disabled');
     hiddenSections.forEach(section => {
-        if (!section.closest('#endpoint-config') && !section.closest('#gitlab-config')) {
+        if (!section.closest('#endpoint-config') && !section.closest('#repository-config')) {
             section.classList.remove('hidden-on-load-disabled');
             section.classList.add('hidden-on-load');
         }
@@ -202,16 +203,16 @@ export function savePromptToFile() {
                 label: '保存',
                 action: () => {
                     const endpoint = document.getElementById('endpoint').value;
-                    const gitlabUrl = document.getElementById('gitlab-url-display').textContent;
+                    const repositoryUrl = document.getElementById('repository-url-display').textContent;
                     const accessTokenDisplay = document.getElementById('access-token-display');
                     const enableAccessToken = accessTokenDisplay.getAttribute('data-type') === 'password';
                     const accessToken = enableAccessToken ? accessTokenDisplay.getAttribute('data-value') : '';
                     const apiKey = document.getElementById('api-key').value;
                     const enableApiKey = document.getElementById('enable-api-key').checked;
-                    const branch = document.getElementById('gitlab-branch-display').textContent;
+                    const branch = document.getElementById('repository-branch-display').textContent;
 
-                    const project_id = getPathWithNamespace(gitlabUrl);
-                    const repoUrl = gitlabUrl.replace(`/${project_id}`, '');
+                    const project_id = getPathWithNamespace(repositoryUrl);
+                    const repoUrl = repositoryUrl.replace(`/${project_id}`, '');
 
                     showDialogMessage('正在保存提示词...');
                     saveRule(endpoint, repoUrl, project_id, branch, yamlString, enableAccessToken ? accessToken : '', enableApiKey ? apiKey : null, selectedRule)
@@ -251,7 +252,7 @@ export function generatePromptYaml() {
 
     const { type, targetFileList, model, systemPrompt } = vars.formData;
     const mode = typeMapping[type] || type;
-    const branch = document.getElementById('gitlab-branch-display')?.textContent || '';
+    const branch = document.getElementById('repository-branch-display')?.textContent || '';
     const target = targetFileList;
     const system = systemPrompt.trim(); // 去掉系统提示词前后的空格
     const name = document.getElementById('rules-dropdown')?.selectedOptions[0]?.textContent || '';
@@ -283,7 +284,7 @@ export function generatePromptYaml() {
         const section = sectionWrapper.classList.contains('section') ? sectionWrapper : sectionWrapper.querySelector('.section');
         const checkbox = sectionWrapper.querySelector('.section-checkbox');
         
-        if ((section.id !== 'gitlab-config' && section.id !== 'rules-config' && checkbox && checkbox.checked) || section.id === 'response') {
+        if ((section.id !== 'repository-config' && section.id !== 'rules-config' && checkbox && checkbox.checked) || section.id === 'response') {
             let configName = section.dataset.configName;
             if (!configName) {
                 if (section.id === 'response') {
@@ -366,7 +367,7 @@ export function clearForm() {
     // 重新加载表单数据loadFormData();
 
     //显示提示消息
-    showToast('表单已清空，Gitlab配置保持不变');
+    showToast('表单已清空，代码仓库配置保持不变');
 }
 
 export function applyTemplate(templateIndex) {

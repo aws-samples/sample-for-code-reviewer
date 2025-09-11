@@ -150,7 +150,7 @@ export function closeDetailDialog() {
     closeDialog();
 }
 
-function validateGitlabUrl(url) {
+function validateRepositoryUrl(url) {
     if (url === '') {
         return true; // Allow empty URL
     }
@@ -162,13 +162,20 @@ function validateGitlabUrl(url) {
     }
 }
 
-export function showGitlabInfoDialog() {
+export function showRepositoryInfoDialog() {
     showDialog({
-        title: '修改Gitlab信息',
+        title: '修改代码仓库信息',
         content: `
             <div class="input-row">
-                <label for="edit-gitlab-url">Gitlab地址:</label>
-                <input type="text" id="edit-gitlab-url">
+                <label for="edit-repository-url">代码仓库地址:</label>
+                <input type="text" id="edit-repository-url">
+            </div>
+            <div class="input-row">
+                <label for="edit-repository-type">仓库类型:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="repository-type" value="gitlab" id="edit-type-gitlab"> GitLab</label>
+                    <label><input type="radio" name="repository-type" value="github" id="edit-type-github"> GitHub</label>
+                </div>
             </div>
             <div class="input-row">
                 <label for="edit-access-token">Access Token:</label>
@@ -182,8 +189,8 @@ export function showGitlabInfoDialog() {
                 </div>
             </div>
             <div class="input-row">
-                <label for="edit-gitlab-branch">Branch:</label>
-                <input type="text" id="edit-gitlab-branch">
+                <label for="edit-repository-branch">Branch:</label>
+                <input type="text" id="edit-repository-branch">
             </div>
         `,
         buttons: [
@@ -191,13 +198,14 @@ export function showGitlabInfoDialog() {
                 enabled: true,
                 label: '确认',
                 action: () => {
-                    const gitlabUrlInput = document.getElementById('edit-gitlab-url');
+                    const repositoryUrlInput = document.getElementById('edit-repository-url');
+                    const repositoryTypeInputs = document.querySelectorAll('input[name="repository-type"]');
                     const accessTokenInput = document.getElementById('edit-access-token');
                     const enableAccessTokenCheckbox = document.getElementById('edit-enable-access-token');
-                    const gitlabBranchInput = document.getElementById('edit-gitlab-branch');
+                    const repositoryBranchInput = document.getElementById('edit-repository-branch');
 
-                    if (!validateGitlabUrl(gitlabUrlInput.value)) {
-                        showErrorDialog('请输入有效的Gitlab URL或留空');
+                    if (!validateRepositoryUrl(repositoryUrlInput.value)) {
+                        showErrorDialog('请输入有效的代码仓库URL或留空');
                         return;
                     }
 
@@ -206,11 +214,22 @@ export function showGitlabInfoDialog() {
                         return;
                     }
 
-                    const gitlabUrlDisplay = document.getElementById('gitlab-url-display');
-                    const accessTokenDisplay = document.getElementById('access-token-display');
-                    const gitlabBranchDisplay = document.getElementById('gitlab-branch-display');
+                    // 获取选中的仓库类型
+                    let selectedType = '';
+                    repositoryTypeInputs.forEach(input => {
+                        if (input.checked) {
+                            selectedType = input.value;
+                        }
+                    });
 
-                    gitlabUrlDisplay.textContent = gitlabUrlInput.value;
+                    const repositoryUrlDisplay = document.getElementById('repository-url-display');
+                    const repositoryTypeDisplay = document.getElementById('repository-type-display');
+                    const accessTokenDisplay = document.getElementById('access-token-display');
+                    const repositoryBranchDisplay = document.getElementById('repository-branch-display');
+
+                    repositoryUrlDisplay.textContent = repositoryUrlInput.value;
+                    repositoryTypeDisplay.textContent = selectedType === 'github' ? 'GitHub' : 'GitLab';
+                    repositoryTypeDisplay.setAttribute('data-value', selectedType);
                     accessTokenDisplay.setAttribute('data-value', accessTokenInput.value);
                     accessTokenDisplay.setAttribute('data-enabled', enableAccessTokenCheckbox.checked);
                     if (enableAccessTokenCheckbox.checked && accessTokenInput.value) {
@@ -220,14 +239,14 @@ export function showGitlabInfoDialog() {
                         accessTokenDisplay.textContent = '未配置';
                         accessTokenDisplay.setAttribute('data-type', 'text');
                     }
-                    gitlabBranchDisplay.textContent = gitlabBranchInput.value;
+                    repositoryBranchDisplay.textContent = repositoryBranchInput.value;
 
                     saveFormData();
-                    closeGitlabInfoDialog();
+                    closeRepositoryInfoDialog();
                     updateSectionVisibility();
 
                     // 检查是否满足触发 refresh_rules 的条件
-                    if (gitlabUrlInput.value && (!enableAccessTokenCheckbox.checked || (enableAccessTokenCheckbox.checked && accessTokenInput.value))) {
+                    if (repositoryUrlInput.value && (!enableAccessTokenCheckbox.checked || (enableAccessTokenCheckbox.checked && accessTokenInput.value))) {
                         refresh_rules();
                     }
                 }
@@ -235,28 +254,46 @@ export function showGitlabInfoDialog() {
             {
                 enabled: true,
                 label: '取消',
-                action: closeGitlabInfoDialog
+                action: closeRepositoryInfoDialog
             }
         ],
         events: {
             beforeOpen: () => {
-                const currentGitlabUrl = document.getElementById('gitlab-url-display').textContent;
+                const currentRepositoryUrl = document.getElementById('repository-url-display').textContent;
+                const currentRepositoryType = document.getElementById('repository-type-display').getAttribute('data-value') || 'gitlab';
                 const currentAccessToken = document.getElementById('access-token-display').getAttribute('data-value');
                 const currentEnableAccessToken = document.getElementById('access-token-display').getAttribute('data-type') === 'password';
-                const currentGitlabBranch = document.getElementById('gitlab-branch-display').textContent;
+                const currentRepositoryBranch = document.getElementById('repository-branch-display').textContent;
 
-                const gitlabUrlInput = document.getElementById('edit-gitlab-url');
+                const repositoryUrlInput = document.getElementById('edit-repository-url');
+                const repositoryTypeInputs = document.querySelectorAll('input[name="repository-type"]');
                 const accessTokenInput = document.getElementById('edit-access-token');
                 const enableAccessTokenCheckbox = document.getElementById('edit-enable-access-token');
                 const toggleAccessTokenBtn = document.getElementById('edit-toggle-access-token');
-                const gitlabBranchInput = document.getElementById('edit-gitlab-branch');
+                const repositoryBranchInput = document.getElementById('edit-repository-branch');
 
-                gitlabUrlInput.value = currentGitlabUrl;
+                repositoryUrlInput.value = currentRepositoryUrl;
+                
+                // 设置仓库类型
+                repositoryTypeInputs.forEach(input => {
+                    input.checked = input.value === currentRepositoryType;
+                });
+                
                 accessTokenInput.value = currentAccessToken;
                 enableAccessTokenCheckbox.checked = currentEnableAccessToken;
                 accessTokenInput.type = 'password';
                 toggleAccessTokenBtn.textContent = '👁️';
-                gitlabBranchInput.value = currentGitlabBranch;
+                repositoryBranchInput.value = currentRepositoryBranch;
+
+                // 添加URL变化监听器，自动检测仓库类型
+                repositoryUrlInput.addEventListener('input', function() {
+                    const url = this.value.toLowerCase();
+                    if (url.includes('github.com')) {
+                        document.getElementById('edit-type-github').checked = true;
+                    } else if (url.includes('gitlab.com') || url.includes('gitlab')) {
+                        document.getElementById('edit-type-gitlab').checked = true;
+                    }
+                });
 
                 toggleAccessTokenBtn.onclick = function() {
                     if (accessTokenInput.type === 'password') {
@@ -279,7 +316,7 @@ export function showGitlabInfoDialog() {
     });
 }
 
-export function closeGitlabInfoDialog() {
+export function closeRepositoryInfoDialog() {
     closeDialog();
 }
 

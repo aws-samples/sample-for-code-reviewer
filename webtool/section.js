@@ -125,7 +125,7 @@ export function loadFormData() {
     } else {
         // 使用默认值
         Object.assign(vars.formData, {
-            gitlabBranch: 'main',
+            repositoryBranch: 'main',
             targetFileList: '**',
             type: 'files',
             model: 'claude3-sonnet',
@@ -143,12 +143,18 @@ export function loadFormData() {
     setValueIfElementExists('model-select', vars.formData.model || 'claude3-sonnet');
     setValueIfElementExists('endpoint', vars.formData.endpoint || 'https://endpoint.cr.teonbox.com/codereview');
 
-    // 设置 Gitlab 地址、Access Token 和 Branch 显示
-    const gitlabUrlDisplay = document.getElementById('gitlab-url-display');
+    // 设置代码仓库地址、仓库类型、Access Token 和 Branch 显示
+    const repositoryUrlDisplay = document.getElementById('repository-url-display');
+    const repositoryTypeDisplay = document.getElementById('repository-type-display');
     const accessTokenDisplay = document.getElementById('access-token-display');
-    const branchDisplay = document.getElementById('gitlab-branch-display');
-    if (gitlabUrlDisplay) {
-        gitlabUrlDisplay.textContent = vars.formData.gitlabUrl || '';
+    const branchDisplay = document.getElementById('repository-branch-display');
+    if (repositoryUrlDisplay) {
+        repositoryUrlDisplay.textContent = vars.formData.repositoryUrl || '';
+    }
+    if (repositoryTypeDisplay) {
+        const repositoryType = vars.formData.repositoryType || 'gitlab';
+        repositoryTypeDisplay.textContent = repositoryType === 'github' ? 'GitHub' : 'GitLab';
+        repositoryTypeDisplay.setAttribute('data-value', repositoryType);
     }
     if (accessTokenDisplay) {
         if (vars.formData.enableAccessToken && vars.formData.accessToken) {
@@ -162,7 +168,7 @@ export function loadFormData() {
         }
     }
     if (branchDisplay) {
-        branchDisplay.textContent = vars.formData.gitlabBranch || 'main';
+        branchDisplay.textContent = vars.formData.repositoryBranch || 'main';
     }
 
     // 设置类型单选按钮
@@ -292,12 +298,13 @@ export function loadFormData() {
 export function saveFormData() {
     const sessionId = getSessionId();
     vars.formData.endpoint = document.getElementById('endpoint')?.value || '';
-    vars.formData.gitlabUrl = document.getElementById('gitlab-url-display')?.textContent || '';
+    vars.formData.repositoryUrl = document.getElementById('repository-url-display')?.textContent || '';
+    vars.formData.repositoryType = document.getElementById('repository-type-display')?.getAttribute('data-value') || 'gitlab';
     vars.formData.apiKey = document.getElementById('api-key').value;
     vars.formData.enableApiKey = document.getElementById('enable-api-key').checked;
     vars.formData.accessToken = document.getElementById('access-token-display')?.getAttribute('data-value') || '';
     vars.formData.enableAccessToken = document.getElementById('access-token-display')?.getAttribute('data-type') === 'password';
-    vars.formData.gitlabBranch = document.getElementById('gitlab-branch-display')?.textContent || 'main';
+    vars.formData.repositoryBranch = document.getElementById('repository-branch-display')?.textContent || 'main';
     vars.formData.model = document.getElementById('model-select')?.value || '';
     vars.formData.targetFileList = document.getElementById('target-file-list')?.value || '';
     vars.formData.type = document.querySelector('input[name="type"]:checked')?.value || '';
@@ -347,7 +354,7 @@ function setValueIfElementExists(id, value) {
 }
 
 function addEventListenersToInputs() {
-    const sections = document.querySelectorAll('.section-wrapper:not(#gitlab-config, #rules-config)');
+    const sections = document.querySelectorAll('.section-wrapper:not(#repository-config, #rules-config)');
     sections.forEach(sectionWrapper => {
         const inputs = sectionWrapper.querySelectorAll('input[type="text"], textarea');
         inputs.forEach(input => {
@@ -436,16 +443,16 @@ export function addRuleToDropdown(ruleName, fileName) {
 }
 
 export function updateSectionVisibility(succ=true) {
-    const sectionsToToggle = document.querySelectorAll('.section-wrapper:not(:has(#endpoint-config)):not(:has(#gitlab-config)):not(:has(#refresh-data-section)), .button-row');
-    const gitlabConfigMessage = document.getElementById('gitlab-config-message');
+    const sectionsToToggle = document.querySelectorAll('.section-wrapper:not(:has(#endpoint-config)):not(:has(#repository-config)):not(:has(#refresh-data-section)), .button-row');
+    const repositoryConfigMessage = document.getElementById('repository-config-message');
     const refreshButtonSection = document.getElementById('refresh-data-section');
     
     if (succ && is_ready()) {
         sectionsToToggle.forEach(section => {
             section.classList.remove('hidden-section');
         });
-        if (gitlabConfigMessage) {
-            gitlabConfigMessage.classList.add('hidden-message');
+        if (repositoryConfigMessage) {
+            repositoryConfigMessage.classList.add('hidden-message');
         }
         if (refreshButtonSection) {
             refreshButtonSection.classList.add('hidden-message');
@@ -454,8 +461,8 @@ export function updateSectionVisibility(succ=true) {
         sectionsToToggle.forEach(section => {
             section.classList.add('hidden-section');
         });
-        if (gitlabConfigMessage) {
-            gitlabConfigMessage.classList.remove('hidden-message');
+        if (repositoryConfigMessage) {
+            repositoryConfigMessage.classList.remove('hidden-message');
         }
         if (refreshButtonSection) {
             refreshButtonSection.classList.remove('hidden-message');
