@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="demo.great.dao.mapper.BillItemMapper">
+    <resultMap id="itemResultMap" type="demo.great.entity.BillItem">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="billDate" column="bill_date"/>
+        <result property="billType" column="bill_type"/>
+        <result property="amount" column="amount"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <insert id="createItem" parameterType="demo.great.entity.BillItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO great_bill_item (user_id, category_id, bill_date, bill_type, amount, description)
+        VALUES (#{userId}, #{categoryId}, #{billDate}, #{billType}, #{amount}, #{description})
+    </insert>
+
+    <update id="updateItem" parameterType="demo.great.entity.BillItem">
+        UPDATE great_bill_item
+        SET user_id = #{userId},
+            category_id = #{categoryId},
+            bill_date = #{billDate},
+            bill_type = #{billType},
+            amount = #{amount},
+            description = #{description}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteItem" parameterType="int">
+        DELETE FROM great_bill_item WHERE id = #{id}
+    </delete>
+
+    <select id="loadItem" parameterType="int" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item WHERE id = #{id}
+    </select>
+
+    <select id="listItems" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+            <if test="startDate != null and endDate != null">
+                AND bill_date BETWEEN #{startDate} AND #{endDate}
+            </if>
+            <if test="billType != null and billType != ''">
+                AND bill_type = #{billType}
+            </if>
+        </where>
+    </select>
+</mapper>

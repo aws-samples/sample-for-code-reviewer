@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="demo.great.dao.mapper.UserMapper">
+    <resultMap id="userResultMap" type="demo.great.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="password" column="password"/>
+        <result property="lastLoginTime" column="last_login_time"/>
+        <result property="lastBillTime" column="last_bill_time"/>
+    </resultMap>
+
+    <resultMap id="itemResultMap" type="demo.great.entity.BillItem">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="billDate" column="bill_date"/>
+        <result property="billType" column="bill_type"/>
+        <result property="amount" column="amount"/>
+        <result property="description" column="description"/>
+    </resultMap>
+
+    <insert id="createUser" parameterType="demo.great.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO great_user (username, nickname, password, last_login_time, last_bill_time)
+        VALUES (#{username}, #{nickname}, #{password}, #{lastLoginTime}, #{lastBillTime})
+    </insert>
+
+    <update id="updateUser" parameterType="demo.great.entity.User">
+        UPDATE great_user
+        SET username = #{username},
+            nickname = #{nickname},
+            password = #{password},
+            last_login_time = #{lastLoginTime},
+            last_bill_time = #{lastBillTime}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteUser" parameterType="int">
+        DELETE FROM great_user WHERE id = #{id}
+    </delete>
+
+    <select id="loadUser" parameterType="int" resultMap="userResultMap">
+        SELECT * FROM great_user WHERE id = #{id}
+    </select>
+
+    <select id="listUsers" resultMap="userResultMap">
+        SELECT * FROM great_user
+        <where>
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="nickname != null and nickname != ''">
+                AND nickname LIKE CONCAT('%', #{nickname}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="listUserExpenses" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item
+        WHERE user_id = #{userId} AND bill_type = 'expense'
+    </select>
+
+    <select id="listUserIncomes" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item
+        WHERE user_id = #{userId} AND bill_type = 'income'
+    </select>
+
+    <select id="getLastUserExpense" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item
+        WHERE user_id = #{userId} AND bill_type = 'expense'
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="getLastUserIncome" resultMap="itemResultMap">
+        SELECT * FROM great_bill_item
+        WHERE user_id = #{userId} AND bill_type = 'income'
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+</mapper>

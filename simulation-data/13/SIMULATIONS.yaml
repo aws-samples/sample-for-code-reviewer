@@ -1,0 +1,17 @@
+# SIMULATIONS.yaml - 仿真提交配置文件
+# 
+# 格式说明:
+# commit_message: 本次提交的 Git 提交信息
+# deletes: 本次提交中需要删除的文件路径列表（相对于项目根目录）
+#
+# 注意: 
+# - 本文件不会被复制到目标仓库
+# - deletes 中的路径如果不存在也不会报错
+# - 提交时会先执行删除操作，再复制新文件
+
+commit_message: "Add UnitTest for UserService"
+deletes:
+  - "src/test/sample1.txt"
+  - "src/test/sample3.txt"
+  - "src/test/sample4.txt"
+  - ".codereview/code-simplification.yaml"
