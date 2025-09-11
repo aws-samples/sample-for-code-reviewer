@@ -604,34 +604,34 @@ button:hover {
         min-width: 1200px;
     }}
 
-#gitlab-config {
+#repository-config {
     min-width: 300px;
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
 }
 
-#gitlab-config .input-row {
+#repository-config .input-row {
     display: flex;
     flex-wrap: nowrap;
     align-items: center;
     margin-bottom: 15px;
 }
 
-#gitlab-config .input-row label {
+#repository-config .input-row label {
     min-width: 140px;
     margin-right: 10px;
     flex: 0 0 auto;
 }
 
-#gitlab-config .input-row input[type="text"],
-#gitlab-config .input-row input[type="password"],
-#gitlab-config .input-row select {
+#repository-config .input-row input[type="text"],
+#repository-config .input-row input[type="password"],
+#repository-config .input-row select {
     flex: 1 1 auto;
     min-width: 0;
 }
 
-#gitlab-config h2 {
+#repository-config h2 {
     cursor: default;
 }
 
@@ -941,7 +941,7 @@ button:hover {
     white-space: nowrap;
 }
 
-#gitlab-config .checkbox-container label , .checkbox-container label {
+#repository-config .checkbox-container label , .checkbox-container label {
     width: 50px;
     min-width: 50px;
     margin-left: 5px;
@@ -957,7 +957,7 @@ button:hover {
     white-space: nowrap;
 }
 
-#gitlab-config .input-row .radio-group label {
+#repository-config .input-row .radio-group label {
     width: 80px;
     min-width: 80px;
 }
@@ -967,11 +967,11 @@ button:hover {
     min-width: 80px;
 }
 
-.gitlab-config-top {
+.repository-config-top {
     margin-bottom: 20px;
 }
 
-.gitlab-config-divider {
+.repository-config-divider {
     border-top: 1px solid #e0e0e0;
     margin-bottom: 20px;
 }
@@ -1118,7 +1118,7 @@ button:hover {
     pointer-events: none;
 }
 
-#rules-config .gitlab-config-divider {
+#rules-config .repository-config-divider {
     border-top: 1px solid #e0e0e0;
     margin-bottom: 20px;
 }
@@ -1149,13 +1149,13 @@ button:hover {
     cursor: default;
 }
 
-#gitlab-config .section-header {
+#repository-config .section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-#gitlab-config .edit-button {
+#repository-config .edit-button {
     background-color: #007acc;
     color: white;
     border: none;
@@ -1166,92 +1166,92 @@ button:hover {
     margin-left: 10px;
 }
 
-#gitlab-config .edit-button:hover {background-color: #005a9e;
+#repository-config .edit-button:hover {background-color: #005a9e;
 }
 
-#gitlab-config .gitlab-info {
+#repository-config .repository-info {
     margin-top: 10px;
 }
 
-#gitlab-config .gitlab-info p {
+#repository-config .repository-info p {
     margin: 5px 0;
 }
 
-#gitlab-config .gitlab-info .label {
+#repository-config .repository-info .label {
     font-weight: bold;
     margin-right: 10px;
 }
 
-#gitlab-config .gitlab-info .value {
+#repository-config .repository-info .value {
     word-break: break-all;
 }
 
-#gitlab-info-dialog {
+#repository-info-dialog {
     width: 400px;
 }
 
-#gitlab-info-dialog .dialog-content {margin-bottom: 20px}
+#repository-info-dialog .dialog-content {margin-bottom: 20px}
 
-#gitlab-info-dialog .input-row {
+#repository-info-dialog .input-row {
     margin-bottom: 15px;
 }
 
-#gitlab-info-dialog .input-row label{
+#repository-info-dialog .input-row label{
     display: block;
     margin-bottom: 5px;
 }
 
-#gitlab-info-dialog .input-row input {
+#repository-info-dialog .input-row input {
     width: 100%;
     padding: 8px;
     border: 1px solid #cccedb;
     border-radius: 2px;
 }
 
-#gitlab-info-dialog .dialog-buttons {
+#repository-info-dialog .dialog-buttons {
     display: flex;
     justify-content: flex-end;
 }
 
-#gitlab-info-dialog .dialog-buttons button {
+#repository-info-dialog .dialog-buttons button {
     margin-left: 10px;
 }
 
-#gitlab-config .input-row {
+#repository-config .input-row {
     display: flex;
     align-items: center;justify: space-between;
 }
 
-#gitlab-config .input-row label{flex: 0 0 auto;
+#repository-config .input-row label{flex: 0 0 auto;
     margin-right: 10px;
 }
 
-#gitlab-config .input-row span {
+#repository-config .input-row span {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-#gitlab-config .input-row .help-icon {
+#repository-config .input-row .help-icon {
     flex: 0 0 auto;
     margin-left: 10px;
 }
 
-#gitlab-config .password-display-container {
+#repository-config .password-display-container {
     display: flex;
     align-items: center;
     flex: 1;
 }
 
-#gitlab-config .password-display-container span {
+#repository-config .password-display-container span {
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-#gitlab-config .toggle-password {
+#repository-config .toggle-password {
     background: none;
     border: none;
     cursor: pointer;
@@ -1260,17 +1260,17 @@ button:hover {
     margin-left: 10px;
 }
 
-#gitlab-config .toggle-password:focus {
+#repository-config .toggle-password:focus {
     outline: none;
 }
 
-#gitlab-config .section-header {
+#repository-config .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-#gitlab-config h2 {
+#repository-config h2 {
     flex: 1;
     margin: 0;
     margin-bottom: 15px;
@@ -1279,7 +1279,7 @@ button:hover {
     align-items: center;
 }
 
-#gitlab-config .edit-button {
+#repository-config .edit-button {
     margin: 0;
     align-self: center;
 }
@@ -1380,7 +1380,7 @@ button:hover {
     background-color: #f5f5f5;
 }
 
-#gitlab-config-message {
+#repository-config-message {
     justify-content: center;
     align-items: center;
     height: 50px;

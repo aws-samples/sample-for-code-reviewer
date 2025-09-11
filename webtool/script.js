@@ -1,6 +1,6 @@
 // script.js
 
-import { showTooltip, hideTooltip, showToast, showNewRuleDialog, showDetailDialog, closeDetailDialog, showGitlabInfoDialog, showErrorDialog } from './dialog.js';
+import { showTooltip, hideTooltip, showToast, showNewRuleDialog, showDetailDialog, closeDetailDialog, showRepositoryInfoDialog, showErrorDialog } from './dialog.js';
 import { executeCodeReview, refresh_rules, savePromptToFile, clearForm, generatePrompt, initializeSections, updateConfirmComponents } from './section_action.js';
 import { toggleSection, addCustomSection, updateTemplateDropdown, loadFormData, saveFormData, addRuleToDropdown, updateSectionVisibility, initializeDragAndDrop, updateCommitInputs } from './section.js';
 import { initializeResultArea } from './result.js';
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Make section titles draggable
     document.querySelectorAll('#sortable-sections .section-wrapper').forEach(wrapper => {
         const title = wrapper.querySelector('h2');
-        if (!wrapper.closest('#gitlab-config') && !wrapper.closest('#rules-config') && !wrapper.closest('#output-requirements') && !wrapper.closest('#system')) {
+        if (!wrapper.closest('#repository-config') && !wrapper.closest('#rules-config') && !wrapper.closest('#output-requirements') && !wrapper.closest('#system')) {
             title.draggable = true;
             title.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', '');  // Required for Firefox
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 检查 Gitlab 配置状态并显示提示信息
+    // 检查 代码仓库配置状态并显示提示信息
     updateSectionVisibility();
 
     // 加载template yamls
@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTemplateDropdown(initialType);
     });
 
-    // 如果 Gitlab 信息已配置，触发 refresh_rules
+    // 如果 代码仓库信息已配置，触发 refresh_rules
     if (is_ready()) {
         refresh_rules();
     }
@@ -244,25 +244,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 添加编辑按钮的事件监听器
-    const editGitlabInfoBtn = document.getElementById('edit-gitlab-info');
-    if (editGitlabInfoBtn) {
-        editGitlabInfoBtn.addEventListener('click', showGitlabInfoDialog);
+    const editRepositoryInfoBtn = document.getElementById('edit-repository-info');
+    if (editRepositoryInfoBtn) {
+        editRepositoryInfoBtn.addEventListener('click', showRepositoryInfoDialog);
     }
 
     // 初始化结果区域
     initializeResultArea();
 
-    // 监听Gitlab配置的变化
-    const gitlabUrlDisplay = document.getElementById('gitlab-url-display');
-    const gitlabBranchDisplay = document.getElementById('gitlab-branch-display');
+    // 监听Repository配置的变化
+    const repositoryUrlDisplay = document.getElementById('repository-url-display');
+    const repositoryBranchDisplay = document.getElementById('repository-branch-display');
 
     const observer = new MutationObserver(() => {
         updateSectionVisibility();
     });
 
-    observer.observe(gitlabUrlDisplay, { childList: true, characterData: true, subtree: true });
+    observer.observe(repositoryUrlDisplay, { childList: true, characterData: true, subtree: true });
     observer.observe(accessTokenDisplay, { attributes: true, attributeFilter: ['data-value'] });
-    observer.observe(gitlabBranchDisplay, { childList: true, characterData: true, subtree: true });
+    observer.observe(repositoryBranchDisplay, { childList: true, characterData: true, subtree: true });
 
     // 更新触发事件单选按钮的事件监听器
     const triggerEventRadios = document.querySelectorAll('input[name="trigger-event"]');
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 页面加载时调用 updateSectionVisibility
     updateSectionVisibility();
 
-    // 监听 Endpoint 和 Gitlab 配置的变化
+    // 监听 Endpoint 和 代码仓库配置的变化
     const endpointInput = document.getElementById('endpoint');
     endpointInput.addEventListener('blur', () => {
         if (is_ready()) {
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    const gitlabConfigObserver = new MutationObserver(() => {
+    const repositoryConfigObserver = new MutationObserver(() => {
         if (is_ready()) {
             refresh_rules();
         } else {
@@ -314,9 +314,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    gitlabConfigObserver.observe(gitlabUrlDisplay, { childList: true, characterData: true, subtree: true });
-    gitlabConfigObserver.observe(accessTokenDisplay, { attributes: true, attributeFilter: ['data-value'] });
-    gitlabConfigObserver.observe(gitlabBranchDisplay, { childList: true, characterData: true, subtree: true });
+    repositoryConfigObserver.observe(repositoryUrlDisplay, { childList: true, characterData: true, subtree: true });
+    repositoryConfigObserver.observe(accessTokenDisplay, { attributes: true, attributeFilter: ['data-value'] });
+    repositoryConfigObserver.observe(repositoryBranchDisplay, { childList: true, characterData: true, subtree: true });
 
     // 初始化commit输入框显示状态
     updateCommitInputs();

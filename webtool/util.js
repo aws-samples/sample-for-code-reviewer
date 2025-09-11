@@ -25,8 +25,8 @@ export function formatDuration(milliseconds) {
     return result.trim();
 }
 
-export function getPathWithNamespace(gitlabUrl) {
-    const url = new URL(gitlabUrl);
+export function getPathWithNamespace(repositoryUrl) {
+    const url = new URL(repositoryUrl);
     let path = url.pathname.replace(/^\//, '');
     if (path.endsWith('.git')) {
         path = path.slice(0, -4);
@@ -70,12 +70,12 @@ export function getUrlAnchor() {
 
 export function is_ready() {
     const endpoint = document.getElementById('endpoint')?.value;
-    const gitlabUrl = document.getElementById('gitlab-url-display')?.textContent;
+    const repositoryUrl = document.getElementById('repository-url-display')?.textContent;
     const accessTokenDisplay = document.getElementById('access-token-display');
     const enableAccessToken = accessTokenDisplay?.getAttribute('data-type') === 'password';
     const accessToken = enableAccessToken ? accessTokenDisplay?.getAttribute('data-value') : '';
 
-    return endpoint && gitlabUrl && (enableAccessToken ? accessToken : true);
+    return endpoint && repositoryUrl && (enableAccessToken ? accessToken : true);
 }
 
 export function escapeHtml(unsafe) {

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代码评审PE调试工具 v1.2</title>
+    <title>代码评审PE调试工具 v1.3</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header id="page-header">
-        <h1>代码评审PE调试工具 v1.2</h1>
+        <h1>代码评审PE调试工具 v1.3</h1>
     </header>
     <div id="main-container">
         <div id="left-panel">
@@ -46,26 +46,31 @@
             </div>
             <div class="section-wrapper">
                 <input type="checkbox" class="section-checkbox" disabled checked>
-                <div class="section" id="gitlab-config">
+                <div class="section" id="repository-config">
                     <h2>
-                        Gitlab配置
-                        <button id="edit-gitlab-info" class="edit-button">编辑</button>
+                        代码仓库配置
+                        <button id="edit-repository-info" class="edit-button">编辑</button>
                     </h2>
                     <div class="section-content">
-                        <div class="gitlab-config-top">
+                        <div class="repository-config-top">
                             <div class="input-row">
-                                <label>Gitlab地址:</label>
-                                <span id="gitlab-url-display" class="gitlab-info-display"></span>
-                                <span class="help-icon icon-char" data-tooltip="Gitlab项目的完整URL地址">ⓘ</span>
+                                <label>代码仓库地址:</label>
+                                <span id="repository-url-display" class="repository-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="代码仓库的完整URL地址">ⓘ</span>
+                            </div>
+                            <div class="input-row">
+                                <label>仓库类型:</label>
+                                <span id="repository-type-display" class="repository-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="代码仓库类型：GitLab或GitHub">ⓘ</span>
                             </div>
                             <div class="input-row">
                                 <label>Access Token:</label>
-                                <span id="access-token-display" class="gitlab-info-display"></span>
-                                <span class="help-icon icon-char" data-tooltip="用于访问Gitlab API的个人访问令牌。&#10;读取信息，至少需要Reporter角色的read api权限&#10;读写信息，至少需要Developer角色的read & write api权限">ⓘ</span>
+                                <span id="access-token-display" class="repository-info-display"></span>
+                                <span class="help-icon icon-char" data-tooltip="用于访问代码仓库API的个人访问令牌">ⓘ</span>
                             </div>
                             <div class="input-row">
                                 <label>Branch:</label>
-                                <span id="gitlab-branch-display" class="gitlab-info-display"></span>
+                                <span id="repository-branch-display" class="repository-info-display"></span>
                                 <span class="help-icon icon-char" data-tooltip="Repository Branch">ⓘ</span>
                             </div>
                         </div>
@@ -95,7 +100,7 @@
                                 <label><input type="radio" name="trigger-event" value="merge" checked>Merge Request</label>
                                 <label><input type="radio" name="trigger-event" value="push">Push</label>
                             </div>
-                            <span class="help-icon icon-char" data-tooltip="Gitlab在什么事件时候触发代码评审">ⓘ</span>
+                            <span class="help-icon icon-char" data-tooltip="代码仓库在什么事件时候触发代码评审">ⓘ</span>
                         </div>
                         <div class="input-row">
                             <label for="target-file-list">目标文件清单:</label>
@@ -103,7 +108,7 @@
                             <span class="help-icon icon-char" data-tooltip="指定参与评审的文件规则，逗号分隔，使用*和**作为通配符。&#10;例如：&quot;src/**Service.java, src/resource/*.xml, readme.md&quot;">ⓘ</span>
                         </div>
                         <div class="input-row">
-                            <label for="gitlab-type">类型:</label>
+                            <label for="repository-type">类型:</label>
                             <div class="radio-group">
                                 <label><input type="radio" name="type" value="whole" checked> whole</label>
                                 <label><input type="radio" name="type" value="files"> files</label>
@@ -128,7 +133,7 @@
                             <span class="help-icon icon-char" data-tooltip="二次检查时使用的提示词">ⓘ</span>
                         </div>
                     </div>
-                    <div class="gitlab-config-divider"></div>
+                    <div class="repository-config-divider"></div>
                     <div>
                         <div id="commit-whole">
                             <div class="input-row">
@@ -310,7 +315,7 @@
             </div>
             <div id="progress-tab" class="tab-content active">
                 <div id="progress-content"></div>
-                <div id="gitlab-config-message" class="gitlab-config-message hidden-message">请先完成Gitlab配置，然后可进入下一步操作</div>
+                <div id="repository-config-message" class="repository-config-message hidden-message">请先完成代码仓库配置，然后可进入下一步操作</div>
             </div>
             <div id="report-tab" class="tab-content">
                 <iframe id="report-frame"></iframe>
@@ -325,7 +330,7 @@
                     <div id="page1" class="help-page">
                         <h4>使用说明</h4>
                         <p><strong>1、简单使用</strong></p>
-                        <p>填写Gitlab地址、Access Token、Branch、Commit信息后，选择模板，点击「执行代码评审」按钮即可看到进度和报告。</p>
+                        <p>填写代码仓库地址、Access Token、Branch、Commit信息后，选择模板，点击「执行代码评审」按钮即可看到进度和报告。</p>
                         <p><strong>2、Demo Endpoint</strong></p>
                         <p>https://endpoint.cr.teonbox.com/codereview，无需API Key</p>
                         <p>此为公共Endpoint，如果您对数据安全有要求，请在自己环境部署Solution。</p>
