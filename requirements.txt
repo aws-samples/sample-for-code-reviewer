@@ -1,0 +1,14 @@
+# Common Layer dependencies
+boto3>=1.40.0
+requests>=2.32.0
+typing_extensions>=4.0.0
+PyYAML>=6.0.2
+
+# GitLab Layer dependencies  
+python-gitlab>=6.3.0
+
+# GitHub Layer dependencies
+PyGithub>=1.59.0
+
+# Development dependencies
+GitPython>=3.1.45

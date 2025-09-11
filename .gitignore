@@ -1,5 +1,7 @@
 !jest.config.js
 *.d.ts
+bin/*.js
+lib/*.js
 node_modules
 
 # CDK asset staging directory
@@ -10,10 +12,14 @@ cdk.out
 .venv
 .vscode
 .DS_Store
+layer/*.zip
 *.log
 tmp
 TODOLIST.md
 input.yaml
 output.yaml
 sync.py
-*/__pycache__/
+**/__pycache__
+
+# Test configuration with sensitive data
+test_config.json
