@@ -41,28 +41,67 @@ cdk bootstrap aws://$ACCOUNT_ID/$AWS_DEFAULT_REGION
 ```shell
 # 注意修改BRANCH这一项
 export BRANCH=dev
-git clone https://github.com/wengkaer/code-reviewer.git
-cd code-reviewer
+git clone https://github.com/aws-samples/sample-for-code-reviewer.git
+cd sample-for-code-reviewer
 git checkout $BRANCH
-npm install
 ```
 
-其中`BRANCH`代表Github上的分支，你可以根据github上的信息选取适合你的分支。	
-
+其中`BRANCH`代表Github上的分支，你可以根据github上的信息选取适合你的分支。
 
 ## CDK部署项目
 
-下面三个命令，选择一个运行：
-```
-# 使用默认参数，必要时输入y确认
-cdk deploy
+### 方法一：一键部署脚本（推荐）
 
-# 使用默认参数，避开询问
-# cdk deploy --require-approval never
+使用自动化部署脚本：
 
-# 自定义参数，你可以自行修改ProjectName等参数
-# cdk deploy --require-approval never --parameters ProjectName=code-review-demo 
+```shell
+./scripts/deploy-cdk.sh
 ```
+
+该脚本会自动执行：
+1. 检查Node.js和npm环境
+2. 安装npm依赖
+3. 构建TypeScript代码
+4. 构建所有Lambda layers
+5. 验证layer文件存在
+6. 执行CDK部署
+
+**自定义参数**：如需修改项目名称或其他参数，请编辑 `scripts/deploy-cdk.sh` 文件，取消注释相应的CDK命令行。
+
+### 方法二：手动部署
+
+如果需要手动控制每个步骤：
+
+```shell
+# 1. 安装依赖
+npm install
+
+# 2. 构建TypeScript
+npm run build
+
+# 3. 构建Lambda layers
+./scripts/build-layer.sh
+
+# 4. CDK部署（选择以下命令之一）
+
+# 默认参数部署
+npm run cdk -- deploy --require-approval never
+
+# 自定义项目名称
+# npm run cdk -- deploy --require-approval never --parameters ProjectName=my-code-reviewer
+
+# 完整自定义参数示例
+# npm run cdk -- deploy --require-approval never \
+#   --parameters ProjectName=my-code-reviewer \
+#   --parameters EnableApiKey=true \
+#   --parameters SMTPServer=smtp.example.com \
+#   --parameters SMTPPort=587
+```
+
+**重要**：无论使用哪种方法，都必须确保以下文件存在：
+- `layer/common-layer.zip`
+- `layer/gitlab-layer.zip` 
+- `layer/github-layer.zip`
 
 ⚠️ 注意：如果出现结构性的调整，例如修改Dynamodb Table PK/SK，CDK不会删除S3 Bucket和DynamoDB，你需要自行删除这些资源才能重新部署。
 

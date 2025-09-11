@@ -1,4 +1,4 @@
-# Code Reviewer - v1.2.3
+# Code Reviewer - v1.3
 
 ## 1. 项目介绍
 
@@ -8,11 +8,11 @@
 
 ## 2. 安装过程
 
-安装过程请参看文档《[CloudFormation安装法](INSTALL.md)》
+安装过程请参看文档《[CloudFormation安装法](doc/installation.md)》
 
 说明：
 - 如果你只是使用本方案，或者进行简单微调（例如：修改Lambda代码），CloudFormation的安装方法是适合的
-- 如果你希望二次开发本方案，进行持续迭代，推荐通过CDK方式安装，可参看文档《[CDK安装法](INSTALL-CDK.md)》
+- 如果你希望二次开发本方案，进行持续迭代，推荐通过CDK方式安装，可参看文档《[CDK安装法](doc/installation-cdk.md)》
 - 当前版本仅仅支持部分区域，详情请参看安装文档。
 
 ## 3. 项目架构
@@ -22,78 +22,50 @@
 
 ```
 .
-├── CHANGELOG.md                    # Changelog
-├── INSTALL-CDK.md                  # CDK Installation doc
-├── INSTALL.md                      # Installation doc
-├── README.md                       # Main doc
+├── CHANGELOG.md                    # 变更日志
+├── CODE_OF_CONDUCT.md              # 行为准则
+├── CONTRIBUTING.md                 # 贡献指南
+├── LICENSE                         # 许可证文件
+├── README.md                       # 主要文档
+├── tsconfig.json                   # TypeScript配置
 ├── bin
-│   └── code-reviewer.ts            # CDK main
-├── cdk.json
-├── jest.config.js
-├── lambda
-│   ├── base.py                     # 基础功能包
-│   ├── cloudfront_func.js          # CloudFront Function用于Web Tool的域名转向
-│   ├── codelib.py                  # 代码仓库相关代码，内部可引用gitlab_code, github_code, codecommit_code等模块实现具体代码仓库功能
-│   ├── cron_function.py            # 定时任务，定期清理失败任务，确保15分钟内发出报告。
-│   ├── gitlab_code.py              # Gitlab相关代码
-│   ├── local.py                    # 本地调试用脚本
-│   ├── log.log	                    # Logger配置，定制了JSON输出格式
-│   ├── logger.py                   # Logger配置，定制了JSON输出格式
-│   ├── report.py                   # 用于产生Report的相关代码
-│   ├── report_receiver.py          # 接收SNS消息，发送demo邮件，也可以发送飞书、钉钉、企业微信消息，或者其他自定义动作
-│   ├── report_template.html        # Code Review Report模板，这个文件本身就可以打开预览哦
-│   ├── request_handler.py          # 代码仓库Webhook接收函数
-│   ├── result_checker.py   	    # 代码评审任务状态检查，用户客户端轮训检查任务进度。
-│   ├── rule_loader.py              # 获取指定分支下所有规则
-│   ├── rule_updater.py             # 更新指定的规则文件
-│   ├── task_base.py                # 任务相关共性方法
-│   ├── task_dispatcher.py          # 任务拆解者，拆解成子任务放入SQS，每一个子任务对应一次Bedrock调用
-│   └── task_executor.py            # SQS消费者，每一个消息对应一次Bedrock调用
-├── layer
-│   └── layer.zip                   # Lambda需要的Layer
-├── lib
-│   ├── api-stack.ts                # API Gateway & Lambda 相关CDK代码
-│   ├── bucket-stack.ts             # S3相关CDK代码
-│   ├── code-reviewer-stack.ts      # CDK代码主入口
-│   ├── cron-stack.ts               # 定时任务相关CDK代码
-│   ├── database-stack.ts           # Dynamodb相关CDK代码
-│   ├── sns-stack.ts                # SNS相关CDK代码
-│   └── sqs-stack.ts                # SQS相关CDK代码
-├── package-lock.json
-├── package.json
-├── scripts
-│   ├── invoke_bedrock_youself.py   # 根据Payload调用Bedrock的脚本
-│   └── mock_codelib_event.py       # 模拟代码仓库事件的脚本
-├── tsconfig.json
+│   └── code-reviewer.ts            # CDK主入口
+├── doc                             # 文档目录
+├── lambda                          # Lambda函数源码目录
+│   ├── base.py                     # 基础功能包
+│   ├── cloudfront_func.js          # CloudFront Function用于Web Tool的域名转向
+│   ├── codelib.py                  # 代码仓库相关代码，内部可引用gitlab_code, github_code等模块
+│   ├── cron_function.py            # 定时任务，定期清理失败任务，确保15分钟内发出报告
+│   ├── github_code.py              # GitHub相关代码
+│   ├── gitlab_code.py              # GitLab相关代码
+│   ├── logger.py                   # Logger配置，定制了JSON输出格式
+│   ├── report.py                   # 用于产生Report的相关代码
+│   ├── report_receiver.py          # 接收SNS消息，发送邮件或其他通知
+│   ├── report_template.html        # Code Review Report模板
+│   ├── request_handler.py          # 代码仓库Webhook接收函数
+│   ├── result_checker.py           # 代码评审任务状态检查，用于客户端轮询检查任务进度
+│   ├── rule_loader.py              # 获取指定分支下所有规则
+│   ├── rule_updater.py             # 更新指定的规则文件
+│   ├── task_base.py                # 任务相关共性方法
+│   ├── task_dispatcher.py          # 任务拆解者，拆解成子任务放入SQS
+│   └── task_executor.py            # SQS消费者，每一个消息对应一次Bedrock调用
+├── layer                           # Lambda Layer目录（需通过build-layer.sh进行build）
+├── lib                             # CDK Stack定义目录
+│   ├── api-stack.ts                # API Gateway & Lambda相关CDK代码
+│   ├── bucket-stack.ts             # S3相关CDK代码
+│   ├── code-reviewer-stack.ts      # CDK代码主入口
+│   ├── cron-stack.ts               # 定时任务相关CDK代码
+│   ├── database-stack.ts           # DynamoDB相关CDK代码
+│   ├── nag-suppressions.ts         # CDK Nag抑制规则
+│   ├── sns-stack.ts                # SNS相关CDK代码
+│   └── sqs-stack.ts                # SQS相关CDK代码
+├── scripts                         # 脚本目录
+│   ├── build-layer.sh              # Layer构建脚本
+│   ├── deploy-cdk.sh               # CDK部署脚本
+│   └── invoke_bedrock_youself.py   # 根据Payload调用Bedrock的脚本
+├── simulation-data                 # 模拟测试数据目录
+├── test                            # 测试目录
 └── webtool                         # Web Tool源码目录
-    ├── axios.min.js                # AXIOS库文件，用于发送AJAX请求
-    ├── custom.js                   # AJAX请求
-    ├── dialog.js                   # 所有其他对话框
-    ├── help.js                     # 帮助对话框
-    ├── images                      # 界面图片资源
-    │   ├── add.svg
-    │   ├── clear.svg
-    │   ├── clipboard.svg
-    │   ├── export.svg
-    │   ├── help.svg
-    │   ├── import.svg
-    │   ├── question.svg
-    │   └── refresh.svg
-    ├── index.html                  # Web Tool入口
-    ├── js-yaml.min.js              # JSYaml库文件，用于解析Yaml文件
-    ├── progress.js                 # 右侧进度部分UI
-    ├── result.js                   # 右侧UI
-    ├── script.js                   # JavaScript主入口
-    ├── section.js                  # 左侧UI
-    ├── section_action.js           # 左侧部分行为
-    ├── style.css                   # CSS样式文件
-    ├── template.all.yaml           # 整库规则模板
-    ├── template.diff.yaml          # Diff规则模板
-    ├── template.single.yaml        # 单文件规则模板
-    ├── util.js                     # 工具集
-    ├── variable.js                 # 全局变量
-    └── videos                      # 视频资源
-        └── guide.mp4
 
 ```
 
@@ -333,7 +305,7 @@
 
 - **代码仓库进行push或merge操作无法触发code review**
 
-	可参看《[CloudFormation安装法 - 验证](INSTALL.md#验证)》一节，检查必要的日志是否出现，又或者出现了什么错误日志。
+	可参看《[CloudFormation安装法 - 验证](doc/installation.md#验证)》一节，检查必要的日志是否出现，又或者出现了什么错误日志。
 
 	例如：
 
@@ -350,3 +322,14 @@
 	检查当前区域是否具有Bedrock Claude3模型，例如：美东1（us-east-1）、美西2（us-west-2）、孟买（ap-south-1）、悉尼（ap-southeast-2）、巴黎（eu-west-3）、爱尔兰（eu-west-1）等区是具有Bedrock Claude3模型的，完整信息可参看《[按 AWS 地区划分的模型支持](https://docs.aws.amazon.com/zh_cn/bedrock/latest/userguide/models-regions.html)》
 
 	另外，检查是否开通了Bedrock Claude3模型。可在`Amazon Bedrock`服务左侧菜单`Model access`中查看和管理。
+
+- **Access Token配置错误**
+
+	如果日志中出现类似于`CodelibException: Fail to init Gitlab context: 404: 404 Project Not Found (Code: NotFound)`或`CodelibException: GitHub authentication failed: Invalid token or insufficient permissions (Code: AuthenticationError)`这样的错误，检查access token的配置是否准确。
+
+	可能的原因包括：
+	- GitLab的webhook中没有配置正确的secret token
+	- Lambda环境变量中没有配置GitHub的access token
+	- Access token权限不足或已过期
+
+	可以通过在日志中检索`private_token`，检查是否为空或不准确。
