@@ -28,6 +28,44 @@ function getLocalStorageWithSession(key) {
     return value ? JSON.parse(value) : null;
 }
 
+// 根据选择的模型更新 Extended Thinking 配置的可见性
+function updateThinkingVisibility() {
+    const modelSelect = document.getElementById('model-select');
+    const enableThinkingRow = document.querySelector('.input-row:has(#enable-thinking)');
+    const thinkingBudgetRow = document.getElementById('thinking-budget-row');
+
+    if (!modelSelect || !enableThinkingRow) return;
+
+    const selectedModel = modelSelect.value;
+
+    // 支持 Extended Thinking 的模型列表
+    const thinkingSupportedModels = [
+        'claude3.7-sonnet',
+        'claude4-opus',
+        'claude4-opus-4.1',
+        'claude4-sonnet',
+        'claude4.5-sonnet',
+        'claude4.5-haiku'
+    ];
+
+    const supportsThinking = thinkingSupportedModels.includes(selectedModel);
+
+    // 显示或隐藏 Extended Thinking 配置
+    if (supportsThinking) {
+        enableThinkingRow.style.display = 'flex';
+        // 如果启用了 thinking，也显示 budget 输入框
+        const enableThinkingCheckbox = document.getElementById('enable-thinking');
+        if (enableThinkingCheckbox && enableThinkingCheckbox.checked && thinkingBudgetRow) {
+            thinkingBudgetRow.style.display = 'flex';
+        }
+    } else {
+        enableThinkingRow.style.display = 'none';
+        if (thinkingBudgetRow) {
+            thinkingBudgetRow.style.display = 'none';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 调用新增的函数
     const addSectionBtn = document.getElementById('add-section');
@@ -181,7 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadFormData();
 
-    document.getElementById('model-select').addEventListener('change', saveFormData);
+    // Model select change event - save form data and update thinking visibility
+    document.getElementById('model-select').addEventListener('change', function() {
+        updateThinkingVisibility();
+        saveFormData();
+    });
 
     // 启动时显示Help Dialog
     const savedShowHelpOnStartup = getLocalStorageWithSession('showHelpOnStartup');
@@ -272,6 +314,22 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Extended Thinking checkbox 事件监听器
+    const enableThinkingCheckbox = document.getElementById('enable-thinking');
+    const thinkingBudgetRow = document.getElementById('thinking-budget-row');
+    if (enableThinkingCheckbox && thinkingBudgetRow) {
+        enableThinkingCheckbox.addEventListener('change', function() {
+            thinkingBudgetRow.style.display = this.checked ? 'flex' : 'none';
+            saveFormData();
+        });
+    }
+
+    // Thinking budget input 事件监听器
+    const thinkingBudgetInput = document.getElementById('thinking-budget');
+    if (thinkingBudgetInput) {
+        thinkingBudgetInput.addEventListener('input', saveFormData);
+    }
+
     // 检查 URL 中是否存在 anchor
     const anchor = getUrlAnchor();
     if (anchor) {
@@ -295,6 +353,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 页面加载时调用 updateSectionVisibility
     updateSectionVisibility();
+
+    // 页面加载时更新 Extended Thinking 可见性
+    updateThinkingVisibility();
 
     // 监听 Endpoint 和 代码仓库配置的变化
     const endpointInput = document.getElementById('endpoint');

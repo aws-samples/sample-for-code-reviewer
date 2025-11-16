@@ -10,7 +10,7 @@ export const vars = {
         accessToken: '',
         enableAccessToken: false,
         repositoryBranch: 'main',
-        model: 'claude3-sonnet',
+        model: 'claude4.5-sonnet',
         targetFileList: '**',
         type: 'files',
         commitId: '',
@@ -52,7 +52,9 @@ export const vars = {
         customSections: [],
         checkboxStates: {},
         sectionOrder: [],
-        triggerEvent: 'merge'
+        triggerEvent: 'merge',
+        enableThinking: false,
+        thinkingBudget: 2000
     },
 
     globalRules: [],

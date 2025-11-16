@@ -54,7 +54,9 @@ export function executeCodeReview() {
         systemPrompt: document.getElementById('system-text')?.value || '',
         triggerEvent: document.querySelector('input[name="trigger-event"]:checked')?.value || 'merge',
         confirm: document.getElementById('confirm')?.checked || false,
-        confirmPrompt: document.getElementById('confirm-prompt')?.value || ''
+        confirmPrompt: document.getElementById('confirm-prompt')?.value || '',
+        enableThinking: document.getElementById('enable-thinking')?.checked || false,
+        thinkingBudget: parseInt(document.getElementById('thinking-budget')?.value || '2000')
     };    
 
     if (selectedRuleName !== null) {

@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代码评审PE调试工具 v1.3</title>
+    <title>代码评审PE调试工具 v1.5</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header id="page-header">
-        <h1>代码评审PE调试工具 v1.3</h1>
+        <h1>代码评审PE调试工具 v1.5</h1>
     </header>
     <div id="main-container">
         <div id="left-panel">
@@ -34,12 +34,18 @@
                         <div class="input-row">
                             <label for="model-select">模型:</label>
                             <select id="model-select">
-                                <option value="claude3.5-sonnet">Claude3.5 Sonnet</option>
-                                <option value="claude3-opus">Claude3 Opus</option>
-                                <option value="claude3-sonnet">Claude3 Sonnet</option>
-                                <option value="claude3-haiku">Claude3 Haiku</option>
+                                <option value="claude4.5-sonnet">Claude 4.5 Sonnet</option>
+                                <option value="claude4.5-haiku">Claude 4.5 Haiku</option>
+                                <option value="claude4-opus">Claude 4 Opus</option>
+                                <option value="claude4-opus-4.1">Claude 4 Opus 4.1</option>
+                                <option value="claude4-sonnet">Claude 4 Sonnet</option>
+                                <option value="claude3.7-sonnet">Claude 3.7 Sonnet</option>
+                                <option value="claude3.5-sonnet">Claude 3.5 Sonnet</option>
+                                <option value="claude3-opus">Claude 3 Opus</option>
+                                <option value="claude3-sonnet">Claude 3 Sonnet</option>
+                                <option value="claude3-haiku">Claude 3 Haiku</option>
                             </select>
-                            <span class="help-icon icon-char" data-tooltip="选择用于代码评审的AI模型">ⓘ</span>
+                            <span class="help-icon icon-char" data-tooltip="选择用于代码评审的AI模型。Claude 3.7 支持 Extended Thinking 功能，可以进行更深入的推理。">ⓘ</span>
                         </div>
                     </div>
                 </div>
@@ -131,6 +137,19 @@
                                 你最新的结论输出到<output>中，你的思考过程输出到<thought>中，<output>和<thought>标签之外不应该有任何其他信息。
                             </textarea>
                             <span class="help-icon icon-char" data-tooltip="二次检查时使用的提示词">ⓘ</span>
+                        </div>
+                        <div class="input-row">
+                            <label for="enable-thinking">启用 Extended Thinking:</label>
+                            <div class="checkbox-container">
+                                <input type="checkbox" id="enable-thinking" name="enable-thinking">
+                                <label for="enable-thinking">启用</label>
+                            </div>
+                            <span class="help-icon icon-char" data-tooltip="启用 Extended Thinking 功能（支持 Claude 3.7/4/4.5 全系列）&#10;• Claude 3.7: 返回完整的推理过程&#10;• Claude 4/4.5: 返回推理过程的摘要&#10;允许模型在回答前进行更深入的推理思考，提高复杂任务的准确性。">ⓘ</span>
+                        </div>
+                        <div class="input-row" id="thinking-budget-row" style="display: none;">
+                            <label for="thinking-budget">Thinking Token 预算:</label>
+                            <input type="number" id="thinking-budget" value="2000" min="1024" step="100">
+                            <span class="help-icon icon-char" data-tooltip="Extended Thinking 的 token 预算（最小值 1024，默认 2000）&#10;更高的预算允许模型进行更深入的思考。">ⓘ</span>
                         </div>
                     </div>
                     <div class="repository-config-divider"></div>
@@ -291,7 +310,7 @@
                             <label for="response-guide">引导语:</label>
                             <input type="text" id="response-guide" value="">
                         </div>
-                        <textarea id="response-text">注意：请将你的结论输出成为JSON形式，填写在<output></output>标签中。标签中的内容我讲通过JSON来解析，千万不要放置非JSON内容。</textarea>
+                        <textarea id="response-text">注意：请将你的思考过程输出到<thought></thought>标签中，将你的结论输出成为JSON形式填写在<output></output>标签中。标签中的内容我将通过JSON来解析，千万不要放置非JSON内容。</textarea>
                     </div>
                 </div>
             </div>            

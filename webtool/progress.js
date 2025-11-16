@@ -142,7 +142,8 @@ export function updateOrCreateTaskElement(task) {
         {key: 'bedrock_timecost', label: 'Bedrock Timecost', multiline: false},
         {key: 'bedrock_system', label: '系统提示词', multiline: true},
         {key: 'bedrock_prompt', label: '用户提示词', multiline: true},
-        {key: 'bedrock_payload', label:'Bedrock Payload', multiline: true}
+        {key: 'bedrock_payload', label:'Bedrock Payload', multiline: true},
+        {key: 'reasoning', label: 'Extended Thinking', multiline: true}
     ];
     
     fields.forEach(field => {
