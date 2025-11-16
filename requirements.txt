@@ -12,3 +12,4 @@ PyGithub>=1.59.0
 
 # Development dependencies
 GitPython>=3.1.45
+pytest>=7.0.0

@@ -97,7 +97,7 @@ def get_prompt_data(mode, rule, code, variables=None):
 	if rule.get('mode') != mode: return None
 	
 	model = rule.get('model') or ''
-	if model.startswith('claude3'):
+	if model.startswith('claude'):
 		if rule.get('prompt_user'):
 			# 策略1：Webtool模式 - 使用预设的完整提示词
 			# prompt_user字段存在，说明这是通过webtool直接指定的完整提示词

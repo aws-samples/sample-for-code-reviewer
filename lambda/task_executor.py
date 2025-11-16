@@ -2,6 +2,8 @@ import boto3
 import traceback
 import os, re, ast, json, time, datetime, logging, random
 import base, task_base
+import model_config
+from botocore.config import Config
 from logger import init_logger
 
 REQUEST_TABLE 			= os.getenv('REQUEST_TABLE')
@@ -100,21 +102,279 @@ def invoke_claude3(model, prompt_data, task_name):
 	except Exception as ex:
 		raise Exception(f'Fail to invoke Claude3: {ex}') from ex
 
+
+def build_messages(messages, for_converse_api=False):
+	"""
+	Build messages array for Bedrock API
+
+	Args:
+		messages: List of message strings or message objects
+		for_converse_api: If True, format for Converse API (no 'type' field)
+
+	Returns:
+		list: Formatted messages array
+	"""
+	formatted_messages = []
+	if isinstance(messages, list):
+		for i, message in enumerate(messages):
+			role = 'user' if i % 2 == 0 else 'assistant'
+			if isinstance(message, str):
+				if for_converse_api:
+					# Converse API format: no 'type' field
+					formatted_messages.append({
+						'role': role,
+						'content': [{'text': message}]
+					})
+				else:
+					# InvokeModel API format: with 'type' field
+					formatted_messages.append({
+						'role': role,
+						'content': [{'type': 'text', 'text': message}]
+					})
+			elif isinstance(message, dict):
+				formatted_messages.append(message)
+	return formatted_messages
+
+
+def build_request_params(model_cfg, prompt_data, enable_reasoning, reasoning_budget):
+	"""
+	Build request parameters for Bedrock API
+
+	Args:
+		model_cfg: Model configuration dict
+		prompt_data: Prompt data dict
+		enable_reasoning: Whether to enable reasoning
+		reasoning_budget: Token budget for reasoning
+
+	Returns:
+		dict: Request parameters
+	"""
+	params = {
+		'anthropic_version': 'bedrock-2023-05-31',
+		'max_tokens': MAX_TOKEN_TO_SAMPLE,
+		'messages': build_messages(prompt_data.get('messages', [])),
+	}
+
+	# Add system prompt if provided
+	if prompt_data.get('system'):
+		params['system'] = prompt_data.get('system')
+
+	# Handle Claude 4.5/Haiku 4.5 parameter restrictions
+	if model_cfg.get('param_restriction') == 'temperature_only':
+		# Only use temperature (current project configuration is 0)
+		params['temperature'] = TEMPERATURE
+		# Don't add top_p
+	else:
+		# Other models can use both
+		params['temperature'] = TEMPERATURE
+		params['top_p'] = TOP_P
+
+	return params
+
+
+def build_reasoning_config(reasoning_budget):
+	"""
+	Build reasoning configuration for Claude 3.7
+
+	Args:
+		reasoning_budget: Token budget for reasoning (default: 2000, min: 1024)
+
+	Returns:
+		dict: Reasoning configuration
+	"""
+	budget = reasoning_budget or 2000
+	if budget < 1024:
+		budget = 1024  # AWS minimum requirement
+	return {
+		'thinking': {
+			'type': 'enabled',
+			'budget_tokens': budget
+		}
+	}
+
+
+def parse_response(response_body, model_cfg, used_converse_api):
+	"""
+	Parse Bedrock response, compatible with both InvokeModel and Converse API
+
+	Args:
+		response_body: Response body from Bedrock
+		model_cfg: Model configuration
+		used_converse_api: Whether Converse API was used
+
+	Returns:
+		dict: Parsed response with text, reasoning, stop_reason, usage
+	"""
+	if used_converse_api:
+		# Converse API response format
+		output = response_body.get('output', {})
+		message = output.get('message', {})
+		content_blocks = message.get('content', [])
+
+		result = {
+			'text': '',
+			'reasoning': None,
+			'stop_reason': response_body.get('stopReason'),
+			'usage': response_body.get('usage', {}),
+		}
+
+		for block in content_blocks:
+			# Claude 3.7+ reasoning content
+			if 'reasoningContent' in block:
+				reasoning_data = block['reasoningContent']
+				if isinstance(reasoning_data, dict):
+					# Extract text from reasoning dict (format: {'text': '...', 'signature': '...'})
+					result['reasoning'] = reasoning_data.get('text', reasoning_data.get('reasoningText', ''))
+				else:
+					result['reasoning'] = str(reasoning_data)
+			# Normal text content
+			elif 'text' in block:
+				result['text'] += block['text']
+
+		return result
+	else:
+		# InvokeModel API response format (existing logic)
+		content = response_body.get('content', [])
+		if content and len(content) > 0:
+			return {
+				'text': content[0].get('text', ''),
+				'reasoning': None,
+				'stop_reason': response_body.get('stop_reason'),
+				'usage': response_body.get('usage', {}),
+			}
+		else:
+			raise Exception('Invalid response format: no content')
+
+
+def invoke_claude(model, prompt_data, task_name, enable_reasoning=False):
+	"""
+	Invoke Claude model (supports Claude 3/3.5/3.7/4/4.5 all series)
+
+	Args:
+		model: Model name (e.g., 'claude3.7-sonnet', 'claude4.5-sonnet')
+		prompt_data: Prompt data dict
+		task_name: Task name for logging
+		enable_reasoning: Whether to enable reasoning capability (only Claude 3.7 supports)
+
+	Returns:
+		dict: Response containing text, reasoning, usage, etc.
+	"""
+	# 1. Get model configuration
+	config = model_config.get_model_config(model)
+
+	# 2. Build request parameters
+	reasoning_budget = prompt_data.get('reasoning_budget', 2000)
+	params = build_request_params(config, prompt_data, enable_reasoning, reasoning_budget)
+
+	# 3. Build reasoning config if enabled and supported
+	additional_fields = None
+	if enable_reasoning and config.get('supports_reasoning'):
+		additional_fields = build_reasoning_config(reasoning_budget)
+
+	# 4. Create Bedrock client with timeout configuration
+	timeout = config.get('timeout', 120)
+	boto_config = Config(read_timeout=timeout)
+
+	if BEDROCK_ACCESS_KEY and BEDROCK_SECRET_KEY and BEDROCK_REGION:
+		bedrock_client = boto3.client(
+			service_name="bedrock-runtime",
+			aws_access_key_id=BEDROCK_ACCESS_KEY,
+			aws_secret_access_key=BEDROCK_SECRET_KEY,
+			region_name=BEDROCK_REGION,
+			config=boto_config
+		)
+	else:
+		bedrock_client = boto3.client(
+			service_name="bedrock-runtime",
+			config=boto_config
+		)
+
+	# 5. Invoke Bedrock
+	try:
+		log.info(f'Invoking {config["model_id"]} for {task_name}',
+				 extra={'params': params, 'additional_fields': additional_fields})
+
+		start_time = time.time()
+
+		# Choose API based on whether additional_fields are needed
+		if additional_fields:
+			# Use Converse API (supports additionalModelRequestFields)
+			# Need to rebuild messages in Converse format (no 'type' field)
+			converse_messages = build_messages(prompt_data.get('messages', []), for_converse_api=True)
+
+			converse_params = {
+				'modelId': config['model_id'],
+				'messages': converse_messages,
+				'inferenceConfig': {
+					'maxTokens': params['max_tokens'],
+					'temperature': 1.0,  # MUST be 1.0 when thinking is enabled
+				},
+				'additionalModelRequestFields': additional_fields
+			}
+
+			# Add system prompt if present
+			if params.get('system'):
+				converse_params['system'] = [{'text': params.get('system')}]
+
+			# Note: topP is not used when thinking is enabled (temperature must be 1.0)
+
+			response = bedrock_client.converse(**converse_params)
+			response_body = response
+		else:
+			# Use InvokeModel API (existing approach)
+			response = bedrock_client.invoke_model(
+				body=json.dumps(params),
+				modelId=config['model_id']
+			)
+			response_body = json.loads(response['body'].read())
+
+		end_time = time.time()
+
+		# 6. Parse response
+		result = parse_response(response_body, config, additional_fields is not None)
+
+		# 7. Return result
+		timecost = int((end_time - start_time) * 1000)
+		return {
+			'model': config['model_id'],
+			'text': result['text'],
+			'reasoning': result.get('reasoning'),  # New: reasoning content
+			'stop_reason': result.get('stop_reason'),
+			'usage': result.get('usage', {}),
+			'payload': json.dumps(params),
+			'timecost': timecost,
+			'start_time': datetime.datetime.fromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+			'end_time': datetime.datetime.fromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+		}
+
+	except Exception as ex:
+		log.error(f'Failed to invoke {config["model_id"]}: {ex}')
+		raise Exception(f'Fail to invoke Claude: {ex}') from ex
+
+
 def invoke_bedrock(task_name, prompt_data):
 	"""
+	Bedrock invocation entry point (maintains existing signature, enhanced functionality)
 	Assume prompt_data has valid field: current_retry, max_retry, messages, model
 	"""
 	model = prompt_data.get('model')
+	enable_reasoning = prompt_data.get('enable_reasoning', False)
+
 	while prompt_data['current_retry'] < prompt_data['max_retry']:
 
 		try:
 
-			if model in ['claude3', 'claude3-haiku', 'claude3-sonnet', 'claude3-opus', 'claude3.5-sonnet']:
+			# Support all Claude models
+			if model in ['claude3', 'claude3-haiku', 'claude3-sonnet', 'claude3-opus',
+						 'claude3.5-sonnet', 'claude3.7-sonnet',
+						 'claude4-opus', 'claude4-opus-4.1', 'claude4-sonnet',
+						 'claude4.5-sonnet', 'claude4.5-haiku']:
 
-				reply = invoke_claude3(model, prompt_data, task_name)
+				reply = invoke_claude(model, prompt_data, task_name, enable_reasoning)
 
 				prompt_data['messages'].append(reply['text'])
 				prompt_data['latest_reply'] = reply['text']
+				prompt_data['reasoning'] = reply.get('reasoning')  # New: store reasoning
 				prompt_data['payload'] = reply['payload']
 				prompt_data['end_time'] = reply['end_time']
 				if 'start_time' not in prompt_data:
@@ -125,9 +385,9 @@ def invoke_bedrock(task_name, prompt_data):
 					prompt_data['timecost'] += reply['timecost']
 
 			else:
-				log.info(f'Mode({model}) is not support.')
+				log.info(f'Model({model}) is not supported.')
 				reply = dict()
-			
+
 			return prompt_data
 
 		except Exception as ex:
@@ -261,7 +521,9 @@ def handle_code_review(record, event, context):
 		timecost = prompt_data.get('timecost', ''),
 		payload = prompt_data.get('payload', ''),
 		prompt_system = prompt_data.get('system', ''),
-		prompt_user = base.dump_json(prompt_data.get('messages')[::2])
+		prompt_user = base.dump_json(prompt_data.get('messages')[::2]),
+		reasoning = prompt_data.get('reasoning', ''),  # New: reasoning content
+		enable_reasoning = prompt_data.get('enable_reasoning', False)  # New: reasoning flag
 	)
 
 	update_complete_task(commit_id, request_id, number, mode, result)
