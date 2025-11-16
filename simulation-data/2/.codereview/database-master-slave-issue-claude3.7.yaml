@@ -1,0 +1,169 @@
+name: Database Master-Slave Issue Claude 3.7
+mode: all
+branch: dev
+target: 'src/main/**.java, src/main/**.xml, src/main/**.properties, pom.xml'
+model: claude3.7-sonnet
+event: push
+order: system, business, design, web_design, sql, requirement, task, output, response
+system: You are an experienced Java developer. You are skilled in developing Java projects and adept at architectural design. You will be participating in a project review.
+confirm: false
+business: |
+  下面是业务描述:
+  项目是一个记账业务系统,向记账App提供restful API接口,提供给C端用户使用。
+design: |
+  项目的主要对象包括:
+  - 用户,User
+    - 用户名称,username
+    - 用户昵称,nickname
+    - 用户密码,password,MD5加密形式
+    - 上次登录时间
+  - 账务类别,Bill Category
+    - 类别名称
+    - 类别描述
+  - 账户明细,Bill Item
+    - 用户ID,记录用户的ID
+    - 账务类别ID,记录账务类别的ID
+    - 费用日期
+    - 费用类别,字符串类型,值:income/expense
+    - 费用金额,用整形保存,以人民币的分为单位存储
+    - 费用描述
+  数据库设计的要求是:
+  - 采用MySQL InnoDB
+  - 数据库名称为great
+  - 每一张数据库表都需要带有前缀great_
+  - 主键为自增int类型
+  - 不要使用FOREIGN KEY的设计
+  - 数据库和表都要先Drop再创建
+  - 数据库设计要采用行业常见规范,并且符合最佳实践
+web_design: |
+  Web工程要求如下:
+  - 项目名字叫做Great,项目主类叫App.java
+  - 使用Maven构建项目,按照Maven规范组织项目
+  - 基础包地址是demo.great
+  - 采用MVC架构,具有Controller、Service、Dao层,需要目录,但先不要Java和XML文件。
+  - 使用SpringBoot 3.1.x
+  - 项目监听8080端口,提供HTTP服务
+  - ORM层使用MyBatis来实现
+  - 数据库采用MySQL
+  - 需要进行UnitTest
+  - 需要用到SL4J记录日志
+  - pom中把需要的依赖都加上
+  - 配置文件叫做application.properties,必要的配置先填进去
+  - 必要的目录都建立起来,例如MyBatis的Mapper分为XML和Java
+  - 注意,MyBatis的Mapper如果需要被扫描,需要有所配置
+sql: |
+  以下是数据库SQL:
+  ```sql
+  DROP DATABASE IF EXISTS great;
+  CREATE DATABASE great;
+  USE great;
+
+  DROP TABLE IF EXISTS great_user;
+  CREATE TABLE great_user (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    nickname VARCHAR(50) NOT NULL,
+    password CHAR(32) NOT NULL,
+    last_login_time DATETIME
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+  DROP TABLE IF EXISTS great_bill_category;
+  CREATE TABLE great_bill_category (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+  DROP TABLE IF EXISTS great_bill_item;
+  CREATE TABLE great_bill_item (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    category_id INT NOT NULL,
+    bill_date DATE NOT NULL,
+    bill_type VARCHAR(10) NOT NULL,
+    amount INT NOT NULL,
+    description VARCHAR(255)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  ```
+requirement: |
+  The project uses a master-slave database, with the following requirements:
+  - Write operation must use the master database
+  - For the same entity, if you need to read after writing, you must use the master database, not slave. Be careful, loading multi-row is a kind of reading operation.
+  - For other reading scenarios, must use the slave database.
+task: |
+  Please check the methods in the all "*Service" to validate correct master-salve database design.
+  You should recursively trace the code call chain to do deeper validation.
+output: |-
+  输出格式要求如下:
+  Output all your message in this format "<output>your
+  finding</output><thought>your thought</thought>"
+
+  Output your finding into <output></output> tag in the following JSON format:
+  ```json
+  [
+    {
+      "title": "summary your finding, less than 30 words, in Chinese, no QUOTES and backslashes symbol here",
+      "content": "your finding, in Chinese, no QUOTES and backslashes symbol here",
+      "filepath": "filepath @ line number range, no QUOTES and backslashes symbol here"
+    },
+    // other findings...
+  ]
+  ```
+  In field content, you must explain why it is incorrect, provide evidence. must
+  display code snippets in markdown code block. must tell how to improve. This
+  part should be as much detail as possible, provide evidence to support your
+  conclusion.
+
+  VERY IMPORTANT:
+  - you mush make sure the JSON output is a valid JSON.
+  - Be careful about each field in the JSON output. QUOTES and backslashes and
+  newline always make errors.
+  - Make sure you escape these symbols in JSON value field.
+  - No need to escape newline symbol outside JSON data!
+  这是一个好的例子:
+
+  ```json
+
+  [
+      {
+          "title": "导致系统崩溃的潜在安全漏洞",
+          "content": "在该文件中,我们发现了一个潜在的安全漏洞。\n代码如下:\n```java\nif @condition) {\n    doSomethingUnsafe();\n}\n```\n这段代码可能会导致系统崩溃,因为在某些情况下,`doSomethingUnsafe()`方法可能会执行一些不安全的操作。我们建议修复这个问题",
+          "filepath": "src/main/java/com/example/App.java @line 45-50"
+      }
+  ]
+
+  ```
+
+  这是一个坏的例子:
+
+  ```json
+
+  [
+      {
+          "title": "导致系统崩溃的潜在安全漏洞",
+          "content": "在该文件中,我们发现了一个名为"追踪者"的安全漏洞。\n代码如下:\n```java\nif @condition) {\\n    doSomethingUnsafe();\n}\n```\n这段代码可能会导致系统崩溃,因为在某些情况下,`doSomethingUnsafe()`方法可能会执行一些不安全的操作。我们建议修复这个问题",
+          "filepath": "src/main/java/com/example/App.java @line 45-50"
+      }
+  ]
+
+  ```
+
+  因为在「名为"追踪者"的安全漏洞」中出现了未转义的双引号。
+
+  Output your thought process in the <thought> tag, you will indicate which
+  parts of my guidelines were violated in the <thought> tag too.
+
+
+  IMPORTANT:
+  - nothing should be output outside <output> and <thought> tag.
+  - Find as many issues as possible
+  - Don't force finding problems, having no issues is a good thing. If you can't
+  find any problems, just output [] inside <output></output> tag.
+other: |
+  请你逐步思考!
+response: |
+  Please:
+  - You will strictly follow my guidelines and requirements. Even if you
+  something conforming to my guidelines is incorrect, do not output it.
+  - You don't need to repeat my requirements.
+

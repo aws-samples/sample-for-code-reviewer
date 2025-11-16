@@ -429,24 +429,30 @@ class DatabaseValidator:
             "request_id不匹配"
         )
         
-        # 验证model - 根据模式和规则期望不同的模型
+        # 验证model - 根据expected_model参数验证
         model = task.get('model', '')
         mode = task.get('mode', '')
-        
-        if mode == 'single':
-            # single模式期望使用code-simplification规则中定义的claude3.5-sonnet
-            expected_model = 'claude3.5-sonnet'
+
+        if hasattr(self, 'expected_model') and self.expected_model:
+            # 如果指定了expected_model，进行精确匹配
             result.check(
-                model == expected_model,
-                f"single模式model正确: {model}",
-                f"single模式model错误: 期望 {expected_model}, 实际 {model}"
+                model == self.expected_model,
+                f"model正确: {model}",
+                f"model错误: 期望 {self.expected_model}, 实际 {model}"
             )
         else:
-            # 其他模式使用通用验证
+            # 否则使用通用验证 - 检查是否是合法的 Claude 模型名称
+            valid_models = [
+                'claude3-sonnet', 'claude3-haiku', 'claude3-opus',
+                'claude3.5-sonnet', 'claude3.5-haiku',
+                'claude3.7-sonnet',
+                'claude4-sonnet', 'claude4-opus',
+                'claude4.5-sonnet'
+            ]
             result.check(
-                model in ['claude3-sonnet', 'claude3-haiku', 'claude3-opus', 'claude3.5-sonnet', 'claude3.5-haiku'],
+                model in valid_models,
                 f"model有效: {model}",
-                f"model无效: {model}"
+                f"model无效: {model} (不在已知模型列表中)"
             )
         
         # 验证succ字段（任务状态）
@@ -467,27 +473,37 @@ class DatabaseValidator:
             timecost = task.get('bedrock_timecost', 0)
             result.info(f"bedrock_timecost: {timecost}ms ({timecost/1000:.1f}秒)")
 
-def validate_database_records(config, expected_commit_id, expected_project_name, expected_task_count, platform):
-    """验证数据库记录的通用函数"""
+def validate_database_records(config, expected_commit_id, expected_project_name, expected_task_count, platform, expected_model=None):
+    """验证数据库记录的通用函数
+
+    Args:
+        config: 测试配置
+        expected_commit_id: 预期的commit ID
+        expected_project_name: 预期的项目名称
+        expected_task_count: 预期的任务数量
+        platform: 平台名称 (github/gitlab)
+        expected_model: 预期的模型名称 (如 'claude4-sonnet', 'claude3.5-sonnet' 等),如果为 None 则使用默认验证
+    """
     print(f"\n=== 验证{platform}平台的数据库记录 ===")
-    
+
     result = ValidationResult()
     validator = DatabaseValidator(config)
-    
+    validator.expected_model = expected_model  # 传递期望的模型
+
     # 第一阶段：等待task分配完成（30秒）
     request_record = validator.wait_for_task_allocation(expected_commit_id)
-    
+
     # 第二阶段：等待task执行完成（5分钟）
     request_record = validator.wait_for_task_completion(request_record)
-    
+
     # 验证request表
     if request_record:
         validator._validate_basic_request_fields(request_record, expected_commit_id, expected_project_name, result)
         validator._validate_task_fields(request_record, expected_task_count, result)
     else:
         result.check(False, "", f"未找到commit_id为 {expected_commit_id} 的request记录")
-    
+
     # 验证task表
     task_records = validator.validate_task_table(request_record, result)
-    
+
     return result, request_record, task_records

@@ -30,15 +30,15 @@ def get_commit_directories():
     commit_dirs.sort(key=lambda x: int(x.name))
     return commit_dirs
 
-def apply_commits_gitlab(config, commit_count=None):
+def apply_commits_gitlab(config, commit_count=None, model='claude3.5'):
     """GitLab版本：所有commits完成后进行一次push"""
-    return _apply_commits_impl(config, commit_count, 'gitlab')
+    return _apply_commits_impl(config, commit_count, 'gitlab', model)
 
-def apply_commits_github(config, commit_count=None):
+def apply_commits_github(config, commit_count=None, model='claude3.5'):
     """GitHub版本：所有commits完成后进行一次push"""
-    return _apply_commits_impl(config, commit_count, 'github')
+    return _apply_commits_impl(config, commit_count, 'github', model)
 
-def _apply_commits_impl(config, commit_count, platform):
+def _apply_commits_impl(config, commit_count, platform, model):
     """统一的commit实现：所有commits完成后进行一次push"""
     platform_config = config[platform]
     
@@ -143,14 +143,24 @@ def _apply_commits_impl(config, commit_count, platform):
                 for file in files:
                     if file == 'SIMULATIONS.yaml':
                         continue
-                    
+
                     local_path = Path(root) / file
                     relative_path = local_path.relative_to(commit_dir)
+
+                    # 如果是 .codereview 目录中的 .yaml 文件，进行模型过滤
+                    if '.codereview' in str(relative_path) and file.endswith('.yaml'):
+                        # 检查文件名是否匹配模型
+                        # 文件命名规则: <rule-name>-<model>.yaml
+                        # 例如: code-simplification-claude3.5.yaml
+                        if f'-{model}.yaml' not in file:
+                            print(f"  跳过文件 (不匹配模型 {model}): {relative_path}")
+                            continue
+
                     target_path = repo_path / relative_path
-                    
+
                     # 确保目标目录存在
                     target_path.parent.mkdir(parents=True, exist_ok=True)
-                    
+
                     # 复制文件
                     shutil.copy2(local_path, target_path)
                     print(f"  添加文件: {relative_path}")

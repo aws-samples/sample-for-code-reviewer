@@ -37,22 +37,35 @@ def load_config():
 
 def main():
     parser = argparse.ArgumentParser(description='集成测试：Single模式代码评审规则')
-    parser.add_argument('platform', choices=['gitlab', 'github'], help='选择平台')
+    parser.add_argument('platform', choices=['gitlab', 'github'], help='选择平台 (gitlab/github)')
+    parser.add_argument('model', nargs='?', choices=['claude3.5', 'claude3.7', 'claude4', 'claude4.5'],
+                        default='claude3.5', help='选择要测试的Claude模型 (默认: claude3.5)')
     args = parser.parse_args()
-    
+
+    # 根据模型确定使用哪些commits
+    model_commit_map = {
+        'claude3.5': {'count': 4, 'desc': 'code-simplification.yaml'},
+        'claude3.7': {'count': 5, 'desc': 'code-simplification-claude3.7.yaml (with Extended Thinking)'},
+        'claude4': {'count': 5, 'desc': 'code-simplification-claude4.yaml'},
+        'claude4.5': {'count': 5, 'desc': 'code-simplification-claude4.5.yaml'}
+    }
+
+    commit_info = model_commit_map[args.model]
+
     print(f"开始测试 {args.platform} Single模式代码评审规则...")
-    print("测试目标：验证.codereview/code-simplification.yaml的single模式评审")
-    print("测试策略：第1次commit后push一次，第2-4次commit后再push一次")
-    
+    print(f"测试模型：{args.model}")
+    print(f"测试目标：验证.codereview/{commit_info['desc']}的single模式评审")
+    print("测试策略：第1次commit后push一次，第2-N次commit后再push一次")
+
     # 加载配置
     config = load_config()
-    
+
     try:
-        # 根据平台触发webhook，使用前4个commits
+        # 根据平台触发webhook，使用指定数量的commits
         if args.platform == 'gitlab':
-            commit_id, project_name = apply_commits_gitlab(config, commit_count=4)
+            commit_id, project_name = apply_commits_gitlab(config, commit_count=commit_info['count'], model=args.model)
         elif args.platform == 'github':
-            commit_id, project_name = apply_commits_github(config, commit_count=4)
+            commit_id, project_name = apply_commits_github(config, commit_count=commit_info['count'], model=args.model)
         
         if not commit_id:
             print("❌ 无法获取commit信息，测试终止")
@@ -67,19 +80,29 @@ def main():
         
         print("\n--- 开始验证数据库记录 ---")
         
+        # 根据模型参数确定期望的模型名称
+        model_name_map = {
+            'claude3.5': 'claude3.5-sonnet',
+            'claude3.7': 'claude3.7-sonnet',
+            'claude4': 'claude4-sonnet',
+            'claude4.5': 'claude4.5-sonnet'
+        }
+        expected_model = model_name_map.get(args.model, 'claude3.5-sonnet')
+
         # 验证数据库记录
         success = validate_database_records(
             config=config,
             expected_commit_id=commit_id,
             expected_project_name=project_name,
             expected_task_count=1,  # Single模式只有1个任务
-            platform=args.platform
+            platform=args.platform,
+            expected_model=expected_model
         )
         
         if success:
-            print(f"\n✅ 测试成功：{args.platform} Single模式代码评审规则验证通过")
+            print(f"\n✅ 测试成功：{args.platform} {args.model} Single模式代码评审规则验证通过")
         else:
-            print(f"\n❌ 测试失败：{args.platform} Single模式代码评审规则验证失败")
+            print(f"\n❌ 测试失败：{args.platform} {args.model} Single模式代码评审规则验证失败")
             print("   请检查validation framework的详细输出")
             
     except Exception as e:
