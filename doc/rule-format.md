@@ -76,8 +76,13 @@ business: |
 **model** (string)
 - 使用的AI模型版本，这是代码中的枚举值，与具体的model ID有映射关系
 - 如果有模型变动，需要修改代码支持，因为不同模型的通信格式不同
-- 可选值: `claude3-opus`, `claude3-sonnet`, `claude3-haiku`
-- 示例: `"claude3-sonnet"`
+- 可选值:
+  - **Claude 3 系列**: `claude3`, `claude3-haiku`, `claude3-sonnet`, `claude3-opus`
+  - **Claude 3.5 系列**: `claude3.5-sonnet`
+  - **Claude 3.7 系列**: `claude3.7-sonnet` (支持推理能力)
+  - **Claude 4 系列**: `claude4-opus`, `claude4-opus-4.1`, `claude4-sonnet`
+  - **Claude 4.5 系列**: `claude4.5-sonnet`, `claude4.5-haiku`
+- 示例: `"claude3.5-sonnet"`, `"claude3.7-sonnet"`, `"claude4.5-sonnet"`
 
 ### 可选字段
 
@@ -97,6 +102,20 @@ business: |
 **requirement** (string, 多行)
 - 具体的评审要求和关注点
 - 可以包含代码规范、性能要求、安全标准等
+
+**enable_reasoning** (boolean, 可选)
+- 是否启用推理能力 (仅 Claude 3.7 支持)
+- 启用后，模型会返回详细的思考过程
+- 思考过程会通过 API 返回，但不会在报告中展示(避免报告过长)
+- 默认值: `false`
+- 示例: `true`
+
+**reasoning_budget** (integer, 可选)
+- 推理过程的 token 预算
+- 取值范围: 1000-10000
+- 默认值: 2000
+- 仅在 `enable_reasoning: true` 时有效
+- 示例: `3000`
 
 ## 事件类型转换
 
