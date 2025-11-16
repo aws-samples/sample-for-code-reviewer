@@ -16,21 +16,21 @@ MODEL_CONFIGS = {
     # Claude 4 Series (uses cross-region inference)
     'claude4-opus': {
         'model_id': 'us.anthropic.claude-opus-4-20250514-v1:0',  # Cross-region inference model ID
-        'supports_reasoning': False,
+        'supports_reasoning': True,  # Supports interleaved-thinking and dev-full-thinking via anthropic_beta
         'version': '4',
         'timeout': 900,  # 15 minutes (Lambda max)
         'param_restriction': None,
     },
     'claude4-opus-4.1': {
         'model_id': 'us.anthropic.claude-opus-4-1-20250805-v1:0',  # Cross-region inference model ID
-        'supports_reasoning': False,
+        'supports_reasoning': True,  # Supports interleaved-thinking and dev-full-thinking via anthropic_beta
         'version': '4.1',
         'timeout': 900,  # 15 minutes (Lambda max)
         'param_restriction': None,
     },
     'claude4-sonnet': {
         'model_id': 'us.anthropic.claude-sonnet-4-20250514-v1:0',  # Cross-region inference model ID
-        'supports_reasoning': False,
+        'supports_reasoning': True,  # Supports interleaved-thinking and dev-full-thinking via anthropic_beta
         'version': '4',
         'timeout': 900,  # 15 minutes (Lambda max)
         'param_restriction': None,
@@ -39,14 +39,14 @@ MODEL_CONFIGS = {
     # Claude 4.5 Series (uses cross-region inference, with parameter restrictions)
     'claude4.5-sonnet': {
         'model_id': 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',  # Cross-region inference model ID
-        'supports_reasoning': False,
+        'supports_reasoning': True,  # Supports interleaved-thinking and dev-full-thinking via anthropic_beta
         'version': '4.5',
         'timeout': 900,  # 15 minutes (Lambda max)
         'param_restriction': 'temperature_only',  # Can only use temperature
     },
     'claude4.5-haiku': {
         'model_id': 'us.anthropic.claude-haiku-4-5-20251001-v1:0',  # Cross-region inference model ID
-        'supports_reasoning': False,
+        'supports_reasoning': True,  # Supports interleaved-thinking and dev-full-thinking via anthropic_beta
         'version': '4.5',
         'timeout': 900,  # 15 minutes (Lambda max)
         'param_restriction': 'temperature_only',  # Can only use temperature
