@@ -36,8 +36,8 @@ rules:
       请检查项目中有没有违反DynamoDB的设计规范。
     output: |-
       输出格式要求如下：
-      Output all your message in this format "<output>your
-      finding</output><thought>your thought</thought>"
+      Output all your message in this format "<thought>your thought</thought><output>your
+      finding</output>"
 
       Output your finding into <output></output> tag in the following JSON format:
       ```json
