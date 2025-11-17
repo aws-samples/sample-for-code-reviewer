@@ -1,6 +1,6 @@
 {
   "name": "code-reviewer",
-  "version": "1.3",
+  "version": "1.5",
   "bin": {
     "code-reviewer": "bin/code-reviewer.js"
   },

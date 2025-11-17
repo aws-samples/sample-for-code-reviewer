@@ -9,7 +9,7 @@
 ## 部署CloudFormation
 
 1. 请先登陆AWS Console
-2. 点击[Launch the Latest CloudFormation Template](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.3%2Ftemplate.yaml)进入CloudFormation页面
+2. 点击[Launch the Latest CloudFormation Template](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.5%2Ftemplate.yaml)进入CloudFormation页面
 3. `Create stack`页面，在整个页面右上角选择你希望安装的区域，点击`Next`按钮。
 4. `Specify stack details`页面，填写一个Stack name，可随便填写。ProjectName可以保持默认，也可以按需要修改。SMTP等信息按需填写，用于发送代码评审报告，不填写不影响报告产生，但不会收到邮件。点击`Next`按钮。
 5. `Configure stack options`页面，保持默认选项。点击`Next`按钮。
