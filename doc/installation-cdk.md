@@ -105,17 +105,17 @@ npm run cdk -- deploy --require-approval never
 
 ⚠️ 注意：如果出现结构性的调整，例如修改Dynamodb Table PK/SK，CDK不会删除S3 Bucket和DynamoDB，你需要自行删除这些资源才能重新部署。
 
-## 配置数据库
+## 配置GitLab（可选） 
 
-与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 配置数据库](INSTALL.md#配置数据库)》一节
+与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 配置GitLab](installation.md#配置gitlab可选)》一节
 
-## 配置Gitlab 
+## 配置GitHub（可选）
 
-与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 配置Gitlab](INSTALL.md#配置Gitlab)》一节
+与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 配置GitHub](installation.md#配置github可选)》一节
 
 ## 验证
 
-与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 验证](INSTALL.md#验证)》一节
+与CloudFormation方式下方法相同，具体可参看《[CloudFormation安装法 - 验证](installation.md#验证)》一节
 
 ## 清理Cloud9
 

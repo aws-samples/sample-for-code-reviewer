@@ -18,19 +18,24 @@
 
 ## 3. 项目架构
 
+![架构图](framework.png)
+
 ## 4. 代码结构
 
 ```
 .
 ├── CHANGELOG.md                    # 变更日志
 ├── CODE_OF_CONDUCT.md              # 行为准则
-├── CONTRIBUTING.md                 # 贡献指南
 ├── LICENSE                         # 许可证文件
 ├── README.md                       # 主要文档
 ├── tsconfig.json                   # TypeScript配置
 ├── bin
 │   └── code-reviewer.ts            # CDK主入口
 ├── doc                             # 文档目录
+│   ├── installation.md             # CloudFormation安装文档
+│   ├── installation-cdk.md         # CDK安装文档
+│   ├── testing-guide.md            # 测试指南
+│   └── ...                         # 其他文档
 ├── lambda                          # Lambda函数源码目录
 │   ├── base.py                     # 基础功能包
 │   ├── cloudfront_func.js          # CloudFront Function用于Web Tool的域名转向
@@ -39,6 +44,7 @@
 │   ├── github_code.py              # GitHub相关代码
 │   ├── gitlab_code.py              # GitLab相关代码
 │   ├── logger.py                   # Logger配置，定制了JSON输出格式
+│   ├── model_config.py             # 模型配置管理
 │   ├── report.py                   # 用于产生Report的相关代码
 │   ├── report_receiver.py          # 接收SNS消息，发送邮件或其他通知
 │   ├── report_template.html        # Code Review Report模板
@@ -62,7 +68,8 @@
 ├── scripts                         # 脚本目录
 │   ├── build-layer.sh              # Layer构建脚本
 │   ├── deploy-cdk.sh               # CDK部署脚本
-│   └── invoke_bedrock_youself.py   # 根据Payload调用Bedrock的脚本
+│   ├── invoke_bedrock_youself.py   # 根据Payload调用Bedrock的脚本
+│   └── test_local.py               # 本地测试脚本
 ├── simulation-data                 # 模拟测试数据目录
 ├── test                            # 测试目录
 └── webtool                         # Web Tool源码目录
@@ -296,7 +303,6 @@
   例如：
 
   - `{project_name}-lambda-logs`日志中查找类似于 `Received Gitlab event[xx]: ...`的日志，检查event的值是否能触发后续流程。
-  - `{project_name}-lambda-logs`日志中查找类似于 `Parsed code review mode(xx) for branch(xx) by configuration ...`的日志，检查获取到的 `{project_name}-repository`表的数据是否能触发后续流程。
   - `{project_name}-lambda-logs`日志中是否存在类似于 `Fail to process`或 `skip the processing.`的日志，明确表示失败。
   - 等等。
 - **触发Bedrock失败怎么回事？**
