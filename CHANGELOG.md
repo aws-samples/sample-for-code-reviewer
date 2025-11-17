@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## v1.5
+
+- Add: Claude 3.7/4/4.5 支持
+- Add: Web Tool 中的 Extended Thinking 配置界面（启用复选框 + token 预算输入）
+- Changed: 输出格式顺序从 <output><thought> 改为 <thought><output>
+- Changed: Simulation library 增强，根据模型后缀过滤Commit文件
+
 ## v1.3
 
 - Add: GitHub仓库支持，包含完整API集成
