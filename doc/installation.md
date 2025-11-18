@@ -111,11 +111,7 @@ Scope = repo (Full control of private repositories)
 ```
 Payload URL = Step1中记录的Endpoint
 Content type = application/json
-Add custom header
-  Header name = X-API-Key
-  Header value = Step2中记录的API Key Value
-Secret = Step3中记录的Personal Access Token
-Events = Push events + Pull requests (也可以按照需要配置)
+Events = Pushes + Pull requests (也可以按照需要配置)
 ```
 
 > 功能路径：GitHub Repository / Settings / Webhooks / Add webhook
