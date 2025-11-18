@@ -9,7 +9,7 @@
 ## 部署CloudFormation
 
 1. 请先登陆AWS Console
-2. 点击[Launch the Latest CloudFormation Template](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.5%2Ftemplate.yaml)进入CloudFormation页面
+2. 点击[Launch the Latest CloudFormation Template](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.5.1%2Ftemplate.yaml)进入CloudFormation页面
 3. `Create stack`页面，在整个页面右上角选择你希望安装的区域，点击`Next`按钮。
 4. `Specify stack details`页面，填写一个Stack name，可随便填写。ProjectName可以保持默认，也可以按需要修改。SMTP等信息按需填写，用于发送代码评审报告，不填写不影响报告产生，但不会收到邮件。点击`Next`按钮。
 5. `Configure stack options`页面，保持默认选项。点击`Next`按钮。
@@ -20,12 +20,27 @@
 
 ⚠️ 注意：如果需要卸载方案，S3 Bucket和DynamoDB不会自动删除，你需要自行删除这些资源。尤其当你需要重新安装方案时，必须先删除已存在的S3 Bucket和DynamoDB表。
 
-**历史版本安装地址**
+## 升级CloudFormation Stack
 
-历史版本信息可参看[CHANGELOG](CHANGELOG.md)：
-- [v1.1](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.1%2Ftemplate.yaml)
-- [v1.0](https://console.aws.amazon.com/cloudformation/home#/stacks/new?templateURL=https%3A%2F%2Fcf-template-wengkaer-257712309840-us-east-1.s3.us-east-1.amazonaws.com%2Fcode-reviewer%2Fv1.0%2Ftemplate.yaml)
+如果你已经部署了Code Reviewer方案，需要升级到新版本，可以按照以下步骤操作：
 
+1. 登陆AWS Console，进入CloudFormation服务
+2. 在左侧菜单选择`Stacks`，找到你之前创建的Stack
+3. 选中该Stack，点击右上角的`Update`按钮，在下拉菜单中选择`Update stack`
+
+![更新Stack](images/cloudformation-update-stack.png)
+
+4. 在`Prepare template`部分，选择`Replace current template`
+5. 在`Template source`部分，选择`Amazon S3 URL`
+6. 填入新版本的模板S3 URL
+
+![替换模板](images/cloudformation-replace-template.png)
+
+7. 点击`Next`按钮
+8. 在`Specify stack details`页面，你可以根据需要修改参数，或保持原有配置不变
+9. 后续步骤与首次安装相同，按照提示完成Stack更新即可
+
+⚠️ 注意：升级过程中，部分资源可能会被更新或替换，请确保在业务低峰期进行升级操作。
 
 ## 配置GitLab（可选）
 
